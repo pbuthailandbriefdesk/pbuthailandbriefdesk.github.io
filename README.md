@@ -6,6 +6,13 @@ It replaces the Power Apps canvas app *L'Oréal Brief Desk* and its SharePoint l
 
 **Live:** https://warintornnakhowong-eng.github.io/loreal-brief-desk/
 
+> **No sign-in (open access).** People pick their name on the first screen; nothing checks who they are.
+> Anyone who has the link can read and change every brief, budget and PO number.
+> This was chosen on 2026-10-15 because email sign-in links were consumed by Outlook's link scanner.
+> To restore sign-in later: connect an email sender (SMTP) in Supabase, drop the "open" policies from
+> `supabase/migrations/003_open_access.sql`, re-run the policy section of `001_schema.sql`, and revert the
+> name picker in `src/data/backend-supabase.js`.
+
 - **Front end:** static site (Preact + htm from a CDN, no build step), hosted on GitHub Pages from `main`.
 - **Back end:** Supabase (Postgres, email sign-in, row level security).
 
@@ -26,7 +33,7 @@ It replaces the Power Apps canvas app *L'Oréal Brief Desk* and its SharePoint l
 | Outlook emails | In-app notifications (bell) plus a pre-filled email draft link |
 | "Email SDF files to me" | Download each file, or all as a .zip |
 | Editing lists in SharePoint | Admin page (desk team, brands, holidays, SDF defaults) |
-| Microsoft sign-in | One-time email link, @wppmedia.com only (checked in the browser and in the database) |
+| Microsoft sign-in | No sign-in: pick your name (see the note at the top) |
 
 The Power App source is kept in `reference/powerapp-src/` for comparison.
 
