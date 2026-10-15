@@ -3,11 +3,21 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../config.js';
 
 const PAGE = 1000;
+// No sign-in (supabase/migrations/003_open_access.sql): people pick who they are,
+// and the choice is remembered in this browser.
+const WHO = 'lbd-who-v1';
+const store = {
+  get() { try { return JSON.parse(localStorage.getItem(WHO) || 'null'); } catch { return null; } },
+  set(v) { try { localStorage.setItem(WHO, JSON.stringify(v)); } catch { /* private mode: this tab only */ } },
+  del() { try { localStorage.removeItem(WHO); } catch { /* ignore */ } },
+};
 
 export function createSupabaseBackend() {
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'implicit' },
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
+  let who = store.get();
+  const listeners = [];
 
   const check = ({ data, error }) => {
     if (error) throw new Error(error.message);
@@ -21,20 +31,15 @@ export function createSupabaseBackend() {
   return {
     mode: 'supabase',
 
-    async session() {
-      const { data } = await sb.auth.getSession();
-      const u = data.session?.user;
-      return u ? { email: u.email, fullName: u.user_metadata?.full_name || '' } : null;
+    async session() { return who; },
+    onAuthChange(cb) { listeners.push(cb); },
+    async signIn(email, fullName = '') {
+      who = { email, fullName };
+      store.set(who);
+      listeners.forEach((f) => f());
     },
-    onAuthChange(cb) {
-      sb.auth.onAuthStateChange(() => cb());
-    },
-    async signIn(email) {
-      const redirectTo = window.location.origin + window.location.pathname;
-      check(await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo } }));
-    },
-    async signOut() { await sb.auth.signOut(); },
-    async setFullName(fullName) { check(await sb.auth.updateUser({ data: { full_name: fullName } })); },
+    async signOut() { who = null; store.del(); listeners.forEach((f) => f()); },
+    async setFullName(fullName) { who = { ...who, fullName }; store.set(who); },
 
     async list(table, { eq, order } = {}) {
       const out = [];

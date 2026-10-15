@@ -71,20 +71,41 @@ function SignIn() {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [sent, setSent] = useState(false);
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
-  const demo = d.mode === 'demo';
+  // No sign-in in either mode: people pick their name (see 003_open_access.sql).
+  const demo = true;
   const [demoTeam, setDemoTeam] = useState([]);
-  useEffect(() => { if (demo) d.list('desk_team').then(setDemoTeam); }, [demo]);
+  useEffect(() => { d.list('desk_team').then(setDemoTeam).catch(() => setDemoTeam([])); }, []);
 
   const submit = async (e) => {
     e.preventDefault();
     const em = email.trim().toLowerCase();
     if (!ALLOWED_DOMAINS.includes(em.split('@')[1])) { setErr(`Use your ${ALLOWED_DOMAINS.map((x) => '@' + x).join(' or ')} address.`); return; }
     setErr(null);
+    setBusy(true);
     try {
       await d.signIn(em, name.trim());
-      if (!demo) setSent(true);
-    } catch (ex) { setErr(ex.message); }
+      if (!demo) { setSent(true); setCode(''); }
+    } catch (ex) {
+      setErr(/rate limit/i.test(ex.message)
+        ? 'Too many sign-in emails were sent recently. Wait a few minutes, then try again.'
+        : ex.message);
+    } finally { setBusy(false); }
+  };
+
+  const verify = async (e) => {
+    e.preventDefault();
+    const c = code.replace(/\s/g, '');
+    if (!/^\d{6,10}$/.test(c)) { setErr('Enter the number code from the email.'); return; }
+    setErr(null);
+    setBusy(true);
+    try {
+      await d.verifyCode(email.trim().toLowerCase(), c);
+    } catch (ex) {
+      setErr(/expired|invalid/i.test(ex.message) ? 'That code is wrong or has expired. Check the latest email, or send a new one.' : ex.message);
+    } finally { setBusy(false); }
   };
 
   return html`<div class="signin">
@@ -99,15 +120,25 @@ function SignIn() {
     <div class="form">
       ${sent ? html`
         <div class="eyebrow muted"><span class="dot"></span>Check your inbox</div>
-        <h2>We sent you a sign-in link</h2>
-        <p class="muted">Open the email sent to <strong>${email}</strong> and click the link. You can close this tab.</p>
-        <button class="btn" onClick=${() => setSent(false)}>Use a different address</button>
+        <h2>Enter your sign-in code</h2>
+        <p class="muted">We emailed a code to <strong>${email}</strong>. Type it here. It can take a minute to arrive.</p>
+        <form onSubmit=${verify} class="stack" style="gap:12px">
+          <div class="field"><label for="code">Code from the email</label>
+            <input id="code" class="input mono" inputmode="numeric" autocomplete="one-time-code" placeholder="123456"
+              style="font-size:20px;letter-spacing:4px;height:48px" value=${code} onInput=${(e) => setCode(e.currentTarget.value)} /></div>
+          ${err && html`<div class="callout err">${err}</div>`}
+          <div><button class="btn btn-primary btn-lg btn-arrow" type="submit" disabled=${busy}>${busy ? 'Checking…' : 'Sign in'}</button></div>
+        </form>
+        <div class="row small" style="margin-top:18px">
+          <button class="btn btn-sm" disabled=${busy} onClick=${submit}>Send a new code</button>
+          <button class="btn btn-sm btn-ghost" onClick=${() => { setSent(false); setErr(null); }}>Use a different address</button>
+        </div>
       ` : html`
         <div class="eyebrow muted"><span class="dot"></span>${demo ? 'Demo mode' : 'Sign in'}</div>
         <h2>${demo ? 'Choose who you are' : 'Sign in with your work email'}</h2>
         <p class="muted">${demo
-          ? 'Supabase is not connected yet, so the Brief Desk is running on the exported SharePoint data in this browser only. Pick a desk team member to try their view.'
-          : "We'll email you a one-time sign-in link. Only @wppmedia.com addresses can sign in."}</p>
+          ? (d.mode === 'demo' ? 'Demo data in this browser only. ' : '') + 'Pick your name to continue.'
+          : "We'll email you a sign-in code. Only @wppmedia.com addresses can sign in."}</p>
         ${demo && html`<div class="stack" style="gap:8px;margin:8px 0 20px">
           ${demoTeam.map((t) => html`<button class="btn" style="justify-content:space-between" onClick=${() => d.signIn(t.email.toLowerCase(), t.name)}>
             <span>${t.name}</span><span class="muted small">${t.role}</span></button>`)}
@@ -119,7 +150,7 @@ function SignIn() {
           ${demo && html`<div class="field"><label for="nm">Your name</label>
             <input id="nm" class="input" placeholder="First Last" value=${name} onInput=${(e) => setName(e.currentTarget.value)} /></div>`}
           ${(err || authError) && html`<div class="callout err">${err || authError}</div>`}
-          <div><button class="btn btn-primary btn-lg btn-arrow" type="submit">${demo ? 'Continue' : 'Email me a sign-in link'}</button></div>
+          <div><button class="btn btn-primary btn-lg btn-arrow" type="submit" disabled=${busy}>${demo ? 'Continue' : busy ? 'Sending…' : 'Email me a code'}</button></div>
         </form>
       `}
     </div>
