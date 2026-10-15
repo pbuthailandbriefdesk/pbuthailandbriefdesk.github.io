@@ -1,0 +1,500 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrHome:
+    Properties:
+      Fill: =RGBA(247, 248, 251, 1)
+      Height: =Max(App.Height, 560)
+      Width: =Max(App.Width, 1024)
+    Children:
+      - hmHeader:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =Color.White
+            Height: =64
+            Width: =Parent.Width
+      - hmHeaderLine:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =nfGreen
+            Height: =3
+            Width: =Parent.Width
+            Y: =61
+      - hmHeaderMark:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =nfNavy
+            Height: =61
+            Width: =4
+      - hmTitle:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Size: =17
+            Text: ="L'Oréal Brief Desk"
+            Width: =Parent.Width - 460
+            X: =If(false, 64, 24)
+            Y: =12
+      - hmUser:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            Color: =RGBA(122, 128, 155, 1)
+            Font: =Font.'Segoe UI'
+            Height: =24
+            Size: =10
+            Text: =User().FullName & "  ·  " & nfRole
+            Width: =320
+            X: =Parent.Width - 344
+            Y: =20
+      - hmTabMine:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =If(varTab = "Mine", Color.White, nfNavy)
+            Fill: =If(varTab = "Mine", nfNavy, RGBA(241, 243, 248, 1))
+            Font: =Font.'Segoe UI'
+            Height: =36
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: =Set(varTab, "Mine")
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =10
+            Text: ="My briefs"
+            Width: =Min(140, (Parent.Width - 24 - 352 - 6 * 8) / 6)
+            X: =24 + 0 * (Min(140, (Parent.Width - 24 - 352 - 6 * 8) / 6) + 8)
+            Y: =84
+      - hmTabAO:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =If(varTab = "AO", Color.White, nfNavy)
+            Fill: =If(varTab = "AO", nfNavy, RGBA(241, 243, 248, 1))
+            Font: =Font.'Segoe UI'
+            Height: =36
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: =Set(varTab, "AO")
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =10
+            Text: ="Ad Ops queue"
+            Width: =Min(140, (Parent.Width - 24 - 352 - 6 * 8) / 6)
+            X: =24 + 1 * (Min(140, (Parent.Width - 24 - 352 - 6 * 8) / 6) + 8)
+            Y: =84
+      - hmTabGate:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =If(varTab = "Gate", Color.White, nfNavy)
+            Fill: =If(varTab = "Gate", nfNavy, RGBA(241, 243, 248, 1))
+            Font: =Font.'Segoe UI'
+            Height: =36
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: =Set(varTab, "Gate")
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =10
+            Text: ="Gate queue"
+            Width: =Min(140, (Parent.Width - 24 - 352 - 6 * 8) / 6)
+            X: =24 + 2 * (Min(140, (Parent.Width - 24 - 352 - 6 * 8) / 6) + 8)
+            Y: =84
+      - hmTabSetup:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =If(varTab = "Setup", Color.White, nfNavy)
+            Fill: =If(varTab = "Setup", nfNavy, RGBA(241, 243, 248, 1))
+            Font: =Font.'Segoe UI'
+            Height: =36
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: =Set(varTab, "Setup")
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =10
+            Text: ="Set-up queue"
+            Width: =Min(140, (Parent.Width - 24 - 352 - 6 * 8) / 6)
+            X: =24 + 3 * (Min(140, (Parent.Width - 24 - 352 - 6 * 8) / 6) + 8)
+            Y: =84
+      - hmTabLocked:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =If(varTab = "Locked", Color.White, nfNavy)
+            Fill: =If(varTab = "Locked", nfNavy, RGBA(241, 243, 248, 1))
+            Font: =Font.'Segoe UI'
+            Height: =36
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: =Set(varTab, "Locked")
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =10
+            Text: ="Locked / set up"
+            Width: =Min(140, (Parent.Width - 24 - 352 - 6 * 8) / 6)
+            X: =24 + 4 * (Min(140, (Parent.Width - 24 - 352 - 6 * 8) / 6) + 8)
+            Y: =84
+      - hmTabAll:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =If(varTab = "All", Color.White, nfNavy)
+            Fill: =If(varTab = "All", nfNavy, RGBA(241, 243, 248, 1))
+            Font: =Font.'Segoe UI'
+            Height: =36
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: =Set(varTab, "All")
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =10
+            Text: ="All briefs"
+            Width: =Min(140, (Parent.Width - 24 - 352 - 6 * 8) / 6)
+            X: =24 + 5 * (Min(140, (Parent.Width - 24 - 352 - 6 * 8) / 6) + 8)
+            Y: =84
+      - hmNew:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =RGBA(16, 20, 61, 1)
+            Fill: =nfGreen
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =36
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: |-
+              =Set(varBrief, Blank()); 
+              IfError(
+              Set(
+                  varBrief,
+                  Patch(
+                      Briefs,
+                      Defaults(Briefs),
+                      {
+                          BriefID: "BR-" & Text(Now(), "yymmdd-hhmmss"),
+                          BriefVersion: 1,
+                          Status: "Draft",
+                          PlannerEmail: nfMeEmail,
+                          PlannerName: User().FullName,
+                          Team: If(nfMe.Team in ["CPD", "Non-CPD"], nfMe.Team, "Non-CPD"),
+                          BrandSafety: "Standard",
+                          Reporting: "Standard",
+                          IsTest: "No",
+                          HandoverNeeded: "No",
+                          IsException: "No",
+                          GateAttempts: 0,
+                          RevisionsMajor: 0,
+                          RevisionsMinor: 0,
+                          TaxonomyFixes: 0,
+                          PostLaunchNamingFixes: 0
+                      }
+                  )
+              ),
+              Notify("Create failed: " & FirstError.Message, NotificationType.Error)
+              );
+              If(
+                  !IsBlank(varBrief.ID),
+                  Patch(BriefEvents, Defaults(BriefEvents), {BriefID: varBrief.BriefID, Event: "Created", ByEmail: nfMeEmail, At: Now(), Detail: ""});
+                  Set(varBriefTab, "Campaign");
+                  Navigate(scrBrief, ScreenTransition.None)
+              )
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =11
+            Text: ="+ New brief"
+            Width: =150
+            X: =Parent.Width - 344
+            Y: =84
+      - hmScore:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =Color.White
+            Fill: =nfBlue
+            Font: =Font.'Segoe UI'
+            Height: =36
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: '=Navigate(scrScore, ScreenTransition.None)  '
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =11
+            Text: ="Scorecards"
+            X: =Parent.Width - 184
+            Y: =84
+      - hmCol0:
+          Control: Label@2.5.1
+          Properties:
+            Color: =nfBlue
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =24
+            Size: =10
+            Text: ="ID / brand"
+            Width: =(Parent.Width - 36) * 0.18
+            X: =24 + (Parent.Width - 36) * 0
+            Y: =136
+      - hmCol1:
+          Control: Label@2.5.1
+          Properties:
+            Color: =nfBlue
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =24
+            Size: =10
+            Text: ="Campaign"
+            Width: =(Parent.Width - 36) * 0.24
+            X: =24 + (Parent.Width - 36) * 0.19
+            Y: =136
+      - hmCol2:
+          Control: Label@2.5.1
+          Properties:
+            Color: =nfBlue
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =24
+            Size: =10
+            Text: ="Flight"
+            Width: =(Parent.Width - 36) * 0.13
+            X: =24 + (Parent.Width - 36) * 0.44
+            Y: =136
+      - hmCol3:
+          Control: Label@2.5.1
+          Properties:
+            Color: =nfBlue
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =24
+            Size: =10
+            Text: ="Planner"
+            Width: =(Parent.Width - 36) * 0.12
+            X: =24 + (Parent.Width - 36) * 0.58
+            Y: =136
+      - hmCol4:
+          Control: Label@2.5.1
+          Properties:
+            Color: =nfBlue
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =24
+            Size: =10
+            Text: ="Buyer"
+            Width: =(Parent.Width - 36) * 0.14
+            X: =24 + (Parent.Width - 36) * 0.71
+            Y: =136
+      - hmCol5:
+          Control: Label@2.5.1
+          Properties:
+            Color: =nfBlue
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =24
+            Size: =10
+            Text: ="Status"
+            Width: =(Parent.Width - 36) * 0.11
+            X: =24 + (Parent.Width - 36) * 0.86
+            Y: =136
+      - hmGal:
+          Control: Gallery@2.15.0
+          Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
+          Properties:
+            Height: =Parent.Height - 176
+            Items: |-
+              =Sort(
+                  Switch(
+                      varTab,
+                      "Mine", Filter(Briefs, PlannerEmail = nfMeEmail && Status <> "Cancelled"),
+                      "AO", Filter(Briefs, Status = "With Ad Ops"),
+                      "Gate", Filter(Briefs, Status = "With Gatekeeper"),
+                      "Setup", Filter(Briefs, Status = "Locked" || (Status = "In set-up" && BuyerEmail = nfMeEmail)),
+                      "Locked", Filter(Briefs, Status = "Locked" || Status = "In set-up" || Status = "Set up"),
+                      Briefs
+                  ),
+                  ID,
+                  SortOrder.Descending
+              )
+            OnSelect: |-
+              =Set(varBrief, LookUp(Briefs, ID = ThisItem.ID));    
+              Set(varBriefTab, "Campaign");
+              Navigate(scrReview, ScreenTransition.None)
+            TemplateSize: =64
+            Width: =Parent.Width - 24
+            X: =12
+            Y: =164
+          Children:
+            - hmRowLine:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =RGBA(226, 229, 238, 1)
+                  Height: =1
+                  OnSelect: =Select(Parent)
+                  Width: =Parent.TemplateWidth
+                  Y: =Parent.TemplateHeight - 1
+            - hmRowId:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(16, 20, 61, 1)
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =24
+                  OnSelect: =Select(Parent)
+                  Size: =11
+                  Text: =ThisItem.BriefID
+                  Width: =Parent.TemplateWidth * 0.18
+                  X: =12
+                  Y: =8
+            - hmRowBrand:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =nfBlue
+                  Font: =Font.'Segoe UI'
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  Size: =10
+                  Text: =ThisItem.Brand & "  ·  " & ThisItem.Team
+                  Width: =Parent.TemplateWidth * 0.18
+                  X: =12
+                  Y: =32
+            - hmRowCamp:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(16, 20, 61, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =48
+                  OnSelect: =Select(Parent)
+                  Size: =10
+                  Text: =Coalesce(ThisItem.CampaignTaxonomy, ThisItem.CampaignName, "(no name yet)")
+                  VerticalAlign: =VerticalAlign.Top
+                  Width: =Parent.TemplateWidth * 0.24
+                  X: =12 + Parent.TemplateWidth * 0.19
+                  Y: =8
+            - hmRowFlight:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(16, 20, 61, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =24
+                  OnSelect: =Select(Parent)
+                  Size: =10
+                  Text: =Text(ThisItem.LaunchDate, "dd mmm yy") & " – " & Text(ThisItem.EndDate, "dd mmm yy")
+                  Width: =Parent.TemplateWidth * 0.13
+                  X: =12 + Parent.TemplateWidth * 0.44
+                  Y: =8
+            - hmRowBudget:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  Size: =10
+                  Text: ="THB " & Text(ThisItem.TotalBudget, "#,##0")
+                  Width: =Parent.TemplateWidth * 0.13
+                  X: =12 + Parent.TemplateWidth * 0.44
+                  Y: =32
+            - hmRowPlanner:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(16, 20, 61, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =24
+                  OnSelect: =Select(Parent)
+                  Size: =10
+                  Text: =ThisItem.PlannerName
+                  Width: =Parent.TemplateWidth * 0.12
+                  X: =12 + Parent.TemplateWidth * 0.58
+                  Y: =8
+            - hmRowBuyer:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =If(IsBlank(ThisItem.BuyerEmail), RGBA(150, 150, 160, 1), nfNavy)
+                  Font: =Font.'Segoe UI'
+                  Height: =24
+                  OnSelect: =Select(Parent)
+                  Size: =10
+                  Text: =If(IsBlank(ThisItem.BuyerEmail), "–", Coalesce(ThisItem.BuyerName, ThisItem.BuyerEmail))
+                  Width: =Parent.TemplateWidth * 0.14
+                  X: =12 + Parent.TemplateWidth * 0.71
+                  Y: =8
+            - hmRowBuyerSt:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =If(IsBlank(ThisItem.BuyerAcceptedAt), RGBA(180, 100, 0, 1), RGBA(21, 128, 61, 1))
+                  Font: =Font.'Segoe UI'
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  Size: =9
+                  Text: =If(!IsBlank(ThisItem.BuyerAcceptedAt), "✓ accepted " & Text(ThisItem.BuyerAcceptedAt, "dd mmm hh:mm"), If(ThisItem.Status = "Locked", "waiting for a buyer", ""))
+                  Width: =Parent.TemplateWidth * 0.14
+                  X: =12 + Parent.TemplateWidth * 0.71
+                  Y: =32
+            - hmRowStatus:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderThickness: =0
+                  Color: |-
+                    =Switch(ThisItem.Status, "Draft", RGBA(74, 80, 112, 1), "With Ad Ops", RGBA(52, 70, 230, 1), "With Gatekeeper", RGBA(109, 40, 217, 1),
+                        "Returned", RGBA(196, 40, 40, 1), "Locked", RGBA(0, 0, 80, 1), "In set-up", RGBA(161, 98, 7, 1), "Set up", RGBA(21, 128, 61, 1), RGBA(122, 128, 155, 1))
+                  Fill: |-
+                    =Switch(ThisItem.Status, "Draft", RGBA(236, 238, 244, 1), "With Ad Ops", RGBA(235, 238, 255, 1), "With Gatekeeper", RGBA(240, 233, 255, 1),
+                        "Returned", RGBA(253, 232, 232, 1), "Locked", RGBA(226, 228, 240, 1), "In set-up", RGBA(254, 243, 214, 1), "Set up", RGBA(228, 246, 234, 1), RGBA(236, 238, 244, 1))
+                  Font: =Font.'Segoe UI'
+                  Height: =26
+                  HoverFill: |-
+                    =Switch(ThisItem.Status, "Draft", RGBA(236, 238, 244, 1), "With Ad Ops", RGBA(235, 238, 255, 1), "With Gatekeeper", RGBA(240, 233, 255, 1),
+                        "Returned", RGBA(253, 232, 232, 1), "Locked", RGBA(226, 228, 240, 1), "In set-up", RGBA(254, 243, 214, 1), "Set up", RGBA(228, 246, 234, 1), RGBA(236, 238, 244, 1))
+                  OnSelect: =Select(Parent)
+                  PressedFill: |-
+                    =Switch(ThisItem.Status, "Draft", RGBA(236, 238, 244, 1), "With Ad Ops", RGBA(235, 238, 255, 1), "With Gatekeeper", RGBA(240, 233, 255, 1),
+                        "Returned", RGBA(253, 232, 232, 1), "Locked", RGBA(226, 228, 240, 1), "In set-up", RGBA(254, 243, 214, 1), "Set up", RGBA(228, 246, 234, 1), RGBA(236, 238, 244, 1))
+                  RadiusBottomLeft: =13
+                  RadiusBottomRight: =13
+                  RadiusTopLeft: =13
+                  RadiusTopRight: =13
+                  Size: =10
+                  Text: ="● " & ThisItem.Status
+                  Width: =Parent.TemplateWidth * 0.11
+                  X: =12 + Parent.TemplateWidth * 0.86
+                  Y: =18
+            - hmRowGo:
+                Control: Classic/Icon@2.5.0
+                Properties:
+                  Color: =nfBlue
+                  Height: =40
+                  Icon: =Icon.ChevronRight
+                  OnSelect: =Select(Parent)
+                  Width: =40
+                  X: =Parent.TemplateWidth - 52
+                  Y: =12
+      - hmEmpty:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(120, 120, 140, 1)
+            Font: =Font.'Segoe UI'
+            Height: =30
+            Size: =12
+            Text: ="Nothing here yet."
+            Visible: =CountRows(hmGal.AllItems) = 0
+            Width: =400
+            X: =24
+            Y: =180

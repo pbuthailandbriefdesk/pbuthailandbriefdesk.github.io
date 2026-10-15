@@ -1,0 +1,437 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrGate:
+    Properties:
+      Fill: =RGBA(247, 248, 251, 1)
+      Height: =Max(App.Height, 560)
+      OnVisible: =Set(varBrief, LookUp(Briefs, ID = varBrief.ID)); Reset(gtGaps)
+      Width: =Max(App.Width, 1024)
+    Children:
+      - gtHeader:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =Color.White
+            Height: =64
+            Width: =Parent.Width
+      - gtHeaderLine:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =nfGreen
+            Height: =3
+            Width: =Parent.Width
+            Y: =61
+      - gtHeaderMark:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =nfNavy
+            Height: =61
+            Width: =4
+      - gtTitle:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Size: =17
+            Text: ="Brief Gate  ·  " & varBrief.BriefID
+            Width: =Parent.Width - 460
+            X: =If(true, 64, 24)
+            Y: =12
+      - gtUser:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            Color: =RGBA(122, 128, 155, 1)
+            Font: =Font.'Segoe UI'
+            Height: =24
+            Size: =10
+            Text: =User().FullName & "  ·  " & nfRole
+            Width: =320
+            X: =Parent.Width - 344
+            Y: =20
+      - gtBack:
+          Control: Classic/Icon@2.5.0
+          Properties:
+            AccessibleLabel: ="Back"
+            Color: =RGBA(16, 20, 61, 1)
+            Height: =32
+            Icon: =Icon.ChevronLeft
+            OnSelect: =Back()
+            Width: =32
+            X: =16
+            Y: =16
+      - gtSumBrand:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =26
+            Text: =varBrief.Brand & "  ·  " & varBrief.Team & "  ·  " & varBrief.AdvertiserName & " (" & varBrief.Advertiser & ")"
+            Width: =Parent.Width - 420
+            Wrap: =false
+            X: =24
+            Y: =76
+      - gtSumLine:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(74, 80, 112, 1)
+            Font: =Font.'Segoe UI'
+            Height: =22
+            Size: =10
+            Text: |-
+              ="Planner " & varBrief.PlannerName &
+              "  ·  Flight " & Text(varBrief.LaunchDate, "dd mmm yy") & " – " & Text(varBrief.EndDate, "dd mmm yy") &
+              "  ·  THB " & Text(varBrief.TotalBudget, "#,##0") &
+              "  ·  " & varBrief.Objective & " / " & varBrief.KPIModel & " " & varBrief.KPITarget &
+              "  ·  " & CountRows(Filter(BriefIOs, BriefID = varBrief.BriefID)) & " IO"
+            Width: =Parent.Width - 420
+            Wrap: =false
+            X: =24
+            Y: =104
+      - gtSumDraft:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(74, 80, 112, 1)
+            Font: =Font.'Segoe UI'
+            Height: =22
+            Size: =10
+            Text: |-
+              =If(IsBlank(varBrief.Notes), "Notes: –", "Notes: " & If(Len(varBrief.Notes) > 180, Left(Substitute(varBrief.Notes, Char(10), " "), 180) & "…", Substitute(varBrief.Notes, Char(10), " ")))
+            Width: =Parent.Width - 420
+            Wrap: =false
+            X: =24
+            Y: =128
+      - gtTax:
+          Control: Label@2.5.1
+          Properties:
+            Color: =nfBlue
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =24
+            Size: =10
+            Text: |-
+              ="Taxonomy: " & varBrief.CampaignTaxonomy & "  ·  Lead time " & varBrief.LeadTimeWD & " working days" & If(varBrief.IsException = "Yes", " (exception: " & varBrief.ExceptionApprover & ")", "")
+            Width: =Parent.Width - 420
+            Wrap: =false
+            X: =24
+            Y: =156
+      - gtLines:
+          Control: Gallery@2.15.0
+          Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
+          Properties:
+            Height: =Parent.Height - Self.Y - 8
+            Items: |-
+              =Sort(Ungroup(Table(
+              {r: ForAll(Filter(BriefIOs, BriefID = varBrief.BriefID) As i, {Lvl: "IO", Ord: i.IONo * 100000000, IONo: i.IONo, LineNo: 0, AGNo: 0, AdNo: 0, Indent: 0, Bud: i.Budget, Act: i.Action, DvId: i.DV360Id,
+                  Label: If(IsBlank(i.Action), "", "[" & i.Action & "] ") & "IO " & i.IONo & " · " & i.IOType & If(IsBlank(i.IOFormat), "", " · " & i.IOFormat) & " · THB " & Text(i.Budget, "#,##0") & " · " & Text(i.StartDate, "dd mmm") & " – " & Text(i.EndDate, "dd mmm yy") & " · " & i.BuyingType & If(IsBlank(i.DealID), "", " " & i.DealID) & " · " & i.KPIModel & " " & i.KPITarget,
+                  Detail: "Pacing " & i.Pacing & "  ·  Freq cap " & If(IsBlank(i.FreqExposures), Coalesce(i.FreqCap, "–"), i.FreqExposures & " / " & i.FreqPeriod) & If(IsBlank(i.SegmentStart), "", "  ·  Segment " & Text(i.SegmentStart, "dd mmm") & " – " & Text(i.SegmentEnd, "dd mmm yy") & " (prior THB " & Text(Coalesce(i.PriorBudget, 0), "#,##0") & ")") & "  ·  Verification " & Coalesce(i.Verification, "–"),
+                  Nm: i.IOName, Sug: Lower(Substitute(Coalesce(LookUp(Brands, BrandName = varBrief.Brand).BrandCode, "X") & "_" & Coalesce(LookUp(nfCats, Name = varBrief.Category).Abv, "X") & "_" & Coalesce(varBrief.Franchise, "X") & "_" & Coalesce(varBrief.CampaignDesc, "X") & "_" & Coalesce(i.IOType, "X") & "-" & Coalesce(LookUp(nfObjs, Name = i.IOObjective).Abv, "X") & "-" & Coalesce(i.KPIModel, "X") & If(IsBlank(i.IOOther), "", "_" & i.IOOther), " ", "-"))})},
+              {r: ForAll(Filter(BriefLines, BriefID = varBrief.BriefID) As l, {Lvl: "LI", Ord: l.IONo * 100000000 + l.LineNo * 100000, IONo: l.IONo, LineNo: l.LineNo, AGNo: 0, AdNo: 0, Indent: 1, Bud: l.Budget, Act: l.Action, DvId: l.DV360Id,
+                  Label: If(IsBlank(l.Action), "", "[" & l.Action & "] ") & "Line item " & l.IONo & "." & l.LineNo & " · " & l.Format & " · THB " & Text(l.Budget, "#,##0") & " · " & Text(l.StartDate, "dd mmm") & " – " & Text(l.EndDate, "dd mmm yy") & " · " & l.BidStrategy & " " & l.BidTarget,
+                  Detail: Coalesce(l.Inventory, "") & If(IsBlank(l.Audience), "", "  ·  Targeting: " & l.Audience) & If(IsBlank(l.Exclusions), "", "  ·  Excl: " & l.Exclusions),
+                  Nm: l.LineItemName, Sug: Lower(Substitute(Coalesce(l.DealType, "X") & If(l.DealType = "Youtube", "-" & Coalesce(l.YTLIType, "X"), "") & "_" & Coalesce(LookUp(nfAuds, Name = l.AudTargeting).AudType, "X") & "-" & Coalesce(LookUp(nfAuds, Name = l.AudTargeting).Abv, "X") & "_" & Coalesce(l.AudTactic, "X") & "_" & Coalesce(l.Gender, "X") & "_" & Coalesce(Text(l.AgeMin), "X") & "-" & Coalesce(Text(l.AgeMax), "X") & "_" & Coalesce(LookUp(nfLangs, Name = l.Language).Abv, "X") & "_" & Coalesce(LookUp(nfDevices, Name = l.Device).Abv, "X") & "_" & Coalesce(l.Environment, "X") & "_" & Coalesce(l.Dims, "X") & "_" & Coalesce(LookUp(nfSust, Name = l.Sustainability).Abv, "X") & If(l.ServiceDisc = "YES", "_SERVICE", "") & "_" & Coalesce(l.PublisherName, "X"), " ", "-"))})},
+              {r: ForAll(Filter(BriefAdGroups, BriefID = varBrief.BriefID) As g, {Lvl: "AG", Ord: g.IONo * 100000000 + g.LineNo * 100000 + g.AGNo * 100, IONo: g.IONo, LineNo: g.LineNo, AGNo: g.AGNo, AdNo: 0, Indent: 2, Bud: 0, Act: g.Action, DvId: g.DV360Id,
+                  Label: If(IsBlank(g.Action), "", "[" & g.Action & "] ") & "Ad group " & g.IONo & "." & g.LineNo & "." & g.AGNo & " · " & g.Audience,
+                  Detail: Coalesce(g.Demographics, "") & If(IsBlank(g.Notes), "", "  ·  " & g.Notes),
+                  Nm: g.AdGroupName, Sug: Lower(Substitute(Coalesce(LookUp(nfAuds, Name = g.AudTargeting).AudType, "X") & "-" & Coalesce(LookUp(nfAuds, Name = g.AudTargeting).Abv, "X") & "_" & Coalesce(g.AudTactic, "X") & "_" & Coalesce(g.Gender, "X") & "_" & Coalesce(Text(g.AgeMin), "X") & "-" & Coalesce(Text(g.AgeMax), "X") & "_" & Coalesce(LookUp(nfLangs, Name = g.Language).Abv, "X") & "_" & Coalesce(g.VideoAdFormat, "X") & If(IsBlank(g.AGOther), "", "_" & g.AGOther), " ", "-"))})},
+              {r: ForAll(Filter(BriefAds, BriefID = varBrief.BriefID) As a, {Lvl: "AD", Ord: a.IONo * 100000000 + a.LineNo * 100000 + a.AGNo * 100 + a.AdNo, IONo: a.IONo, LineNo: a.LineNo, AGNo: a.AGNo, AdNo: a.AdNo, Indent: If(a.AGNo = 0, 2, 3), Bud: 0, Act: a.Action, DvId: a.DV360Id,
+                  Label: If(IsBlank(a.Action), "", "[" & a.Action & "] ") & If(a.AGNo = 0, "Creative " & a.IONo & "." & a.LineNo & " #", "Ad " & a.IONo & "." & a.LineNo & "." & a.AGNo & " #") & a.AdNo & If(IsBlank(a.AdFormat), "", " · " & a.AdFormat) & If(IsBlank(a.CreativeSize), "", " · " & a.CreativeSize) & If(a.VideoLength > 0, " · " & a.VideoLength & "s", ""),
+                  Detail: Coalesce(a.AssetURL, "") & "  →  " & Coalesce(a.LandingURL, "") & If(IsBlank(a.CTA), "", "  ·  CTA " & a.CTA) & If(IsBlank(a.Headline), "", "  ·  " & a.Headline) & If(IsBlank(a.Description), "", "  ·  " & a.Description),
+                  Nm: a.AdName, Sug: Lower(Substitute(Coalesce(a.AssetDesc, "X") & "_" & Coalesce(a.AssetSource, "X") & "_" & Coalesce(a.AdFormat, "X") & "_" & If(a.VideoLength > 0, Text(a.VideoLength), "X") & "_" & Coalesce(a.CTACode, "X") & "_" & Coalesce(a.Skippable, "X") & "_" & Coalesce(a.AdBuyingType, "X") & "_" & Coalesce(a.Rotation, "X") & "_" & Switch(a.Redirect, "E-retailers", "e-" & a.Retailer, "Others", Coalesce(a.Retailer, "other"), "L'Oréal D2C", "d2c", "L'Oréal non-D2C", "non-d2c", "None", "noredirect", "X") & If(IsBlank(a.AdOther), "", "_" & a.AdOther), " ", "-"))})}
+              ), r), Ord)
+            TemplateSize: =66
+            Width: =Parent.Width - 396
+            X: =12
+            Y: =188
+          Children:
+            - gtLnSep:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =RGBA(226, 229, 238, 1)
+                  Height: =1
+                  Width: =Parent.TemplateWidth
+                  Y: =Parent.TemplateHeight - 1
+            - gtLnBar:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =Switch(ThisItem.Lvl, "IO", nfNavy, "LI", nfBlue, "AG", RGBA(147, 223, 227, 1), nfGreen)
+                  Height: =Parent.TemplateHeight - 12
+                  Width: =4
+                  X: =4 + ThisItem.Indent * 24
+                  Y: =6
+            - gtLnA:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(16, 20, 61, 1)
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =22
+                  Size: =10
+                  Text: =Substitute(Substitute(ThisItem.Label, Char(13), " "), Char(10), " ")
+                  Width: =Parent.TemplateWidth - 24 - ThisItem.Indent * 24
+                  Wrap: =false
+                  X: =14 + ThisItem.Indent * 24
+                  Y: =2
+            - gtLnB:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =38
+                  Size: =9
+                  Text: |-
+                    ="Name: " & Coalesce(ThisItem.Nm, "–") & If(IsBlank(ThisItem.DvId), "", "   ·   DV360 ID " & ThisItem.DvId) & "   ·   " & ThisItem.Detail
+                  VerticalAlign: =VerticalAlign.Top
+                  Width: =Parent.TemplateWidth - 24 - ThisItem.Indent * 24
+                  X: =14 + ThisItem.Indent * 24
+                  Y: =24
+      - gtPanel:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =RGBA(241, 243, 248, 1)
+            Height: =Parent.Height - 64
+            Width: =372
+            X: =Parent.Width - 372
+            Y: =64
+      - gtPTitle:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =28
+            Size: =14
+            Text: ="12-item check"
+            Width: =330
+            X: =Parent.Width - 352
+            Y: =72
+      - gtChecks:
+          Control: Gallery@2.15.0
+          Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
+          Properties:
+            Height: =Parent.Height - 102 - 196
+            Items: |-
+              =With(
+                  {
+                      b: varBrief,
+                      I: Filter(BriefIOs, BriefID = varBrief.BriefID),
+                      L: Filter(BriefLines, BriefID = varBrief.BriefID),
+                      G: Filter(BriefAdGroups, BriefID = varBrief.BriefID),
+                      A: Filter(BriefAds, BriefID = varBrief.BriefID)
+                  },
+                  Table(
+                      {No: 0, Item: "Structure", Rule: "Required", Ok: CountRows(I) > 0 && CountRows(Filter(I As io, CountRows(Filter(L, IONo = io.IONo)) = 0)) = 0 && CountRows(Filter(L As li, With({ch: LookUp(I, IONo = li.IONo).Channel}, If(ch = "YouTube", !(li.Format in ["VRC", "VVC", "Non-skip", "Bumper", "Shorts"]), li.Format in ["VRC", "VVC", "Non-skip", "Bumper", "Shorts"])))) = 0, Gap: "At least one IO, a line item in every IO, and line formats that match the IO channel"},
+                      {No: 1, Item: "PO", Rule: "Required", Ok: !IsBlank(b.PONumber) && !IsBlank(b.POLink) && b.POAmount > 0 && Round(b.POAmount, 2) >= Round(b.TotalBudget, 2), Gap: "PO number, PO file link, and a PO amount that covers the total budget"},
+                      {No: 2, Item: "Budget & split", Rule: "Required", Ok: b.TotalBudget > 0 && CountRows(I) > 0 && Round(Sum(I, Budget), 2) = Round(b.TotalBudget, 2) && CountRows(Filter(I, !(Budget > 0))) = 0 && CountRows(Filter(L, !(Budget > 0))) = 0 && CountRows(Filter(I As io, Round(Sum(Filter(L, IONo = io.IONo), Budget), 2) <> Round(io.Budget, 2))) = 0, Gap: "IO budgets must add up to the campaign budget, and line budgets to each IO budget"},
+                      {No: 3, Item: "Flight", Rule: "Required", Ok: !IsBlank(b.LaunchDate) && !IsBlank(b.EndDate) && b.EndDate >= b.LaunchDate && CountRows(Filter(I, IsBlank(StartDate) || IsBlank(EndDate) || EndDate < StartDate || StartDate < b.LaunchDate || EndDate > b.EndDate)) = 0 && CountRows(Filter(L As li, With({p: LookUp(I, IONo = li.IONo)}, IsBlank(li.StartDate) || IsBlank(li.EndDate) || li.EndDate < li.StartDate || li.StartDate < p.StartDate || li.EndDate > p.EndDate))) = 0 && CountRows(Filter(I, !IsBlank(SegmentStart) && (SegmentStart < StartDate || SegmentEnd > EndDate || SegmentEnd < SegmentStart))) = 0 && (b.BriefType = "New" || IsBlank(b.BriefType) || !IsBlank(b.EffectiveDate)), Gap: "Campaign dates; IOs inside the campaign, lines inside their IO, budget segment inside its IO; extensions need an effective date"},
+                      {No: 4, Item: "Objective & KPI", Rule: "Required", Ok: !IsBlank(b.Objective) && !IsBlank(b.KPIModel) && b.KPITarget > 0 && CountRows(Filter(I, IsBlank(KPIModel) || !(KPITarget > 0))) = 0, Gap: "Campaign objective and KPI, and a KPI model and target on every IO"},
+                      {No: 5, Item: "Audience", Rule: "Required", Ok: CountRows(L) > 0 && CountRows(Filter(L As li, If(LookUp(I, IONo = li.IONo).Channel = "YouTube", CountRows(Filter(G, IONo = li.IONo && LineNo = li.LineNo)) = 0, IsBlank(li.Audience)))) = 0 && CountRows(Filter(G, IsBlank(Audience))) = 0, Gap: "YouTube: ad groups with an audience in every line item. Others: targeting on every line"},
+                      {No: 6, Item: "Buying type / deal ID", Rule: "Required", Ok: CountRows(I) > 0 && CountRows(Filter(I, IsBlank(BuyingType) || (BuyingType in ["PG", "PMP"] && IsBlank(DealID)))) = 0, Gap: "Buying type on every IO, and a deal ID for PG or PMP"},
+                      {No: 7, Item: "Creative", Rule: "Required", Ok: CountRows(A) > 0 && CountRows(Filter(G As g, CountRows(Filter(A, IONo = g.IONo && LineNo = g.LineNo && AGNo = g.AGNo)) = 0)) = 0 && CountRows(Filter(L As li, LookUp(I, IONo = li.IONo).Channel <> "YouTube" && CountRows(Filter(A, IONo = li.IONo && LineNo = li.LineNo)) = 0)) = 0 && CountRows(Filter(A As a, !StartsWith(a.LandingURL, "https://") || With({f: LookUp(L, IONo = a.IONo && LineNo = a.LineNo).Format}, (f = "Bumper" && a.VideoLength > 6) || (f = "Non-skip" && a.VideoLength > 15)))) = 0 && CountRows(Filter(A As a, a.Action <> "Pause" && IsBlank(a.AssetURL))) = 0, Gap: "Ad per ad group, creative per non-YouTube line, video / creative link on every live ad, https:// URLs, length fits format"},
+                      {No: 8, Item: "Tracking", Rule: "Required", Ok: !IsBlank(b.Tracking), Gap: "Floodlight / pixel / UTM / 3P tag"},
+                      {No: 9, Item: "Test design", Rule: "If a test", Ok: b.IsTest <> "Yes" || !IsBlank(b.TestDesign), Gap: "Test / control, variable and duration"},
+                      {No: 10, Item: "Handover", Rule: "If needed", Ok: b.HandoverNeeded <> "Yes" || !IsBlank(b.HandoverNotes), Gap: "Handover notes"},
+                      {No: 11, Item: "Brand safety", Rule: "Default if blank", Ok: true, Gap: ""},
+                      {No: 12, Item: "Reporting & brand lift", Rule: "If BLS", Ok: b.BrandLift <> "Yes" || !IsBlank(b.BLSNotes), Gap: "Brand lift is on: add the BLS budget, dates and questions"},
+                      {No: 13, Item: "DV360 actions & IDs", Rule: "Ad Ops", Ok: b.Status in ["Draft", "Returned"] || (!(b.BriefType in ["Extension", "Update"]) || !IsBlank(b.DV360CampaignId)) && CountRows(Filter(I, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) + CountRows(Filter(L, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) + CountRows(Filter(G, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) + CountRows(Filter(A, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) = 0, Gap: "Ad Ops: an action on every IO, line, ad group and ad, and the DV360 ID for anything that already exists"}
+                  )
+              )
+            TemplateSize: =58
+            Width: =348
+            X: =Parent.Width - 360
+            Y: =102
+          Children:
+            - gtChkMark:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Center
+                  Color: =If(ThisItem.Ok, RGBA(21, 128, 61, 1), RGBA(196, 40, 40, 1))
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =24
+                  Text: =If(ThisItem.Ok, "✓", "✗")
+                  Width: =28
+                  Y: =2
+            - gtChkItem:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(16, 20, 61, 1)
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =20
+                  Size: =10
+                  Text: =If(ThisItem.No = 0, "", ThisItem.No & " · ") & ThisItem.Item
+                  Width: =Parent.TemplateWidth - 32 - 104
+                  Wrap: =false
+                  X: =32
+                  Y: =4
+            - gtChkRule:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =9
+                  Text: =ThisItem.Rule
+                  Width: =96
+                  Wrap: =false
+                  X: =Parent.TemplateWidth - 104
+                  Y: =4
+            - gtChkGap:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(196, 40, 40, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Size: =9
+                  Text: =If(ThisItem.Ok, "", ThisItem.Gap)
+                  VerticalAlign: =VerticalAlign.Top
+                  Visible: =!ThisItem.Ok
+                  Width: =Parent.TemplateWidth - 44
+                  X: =32
+                  Y: =24
+            - gtChkSep:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =RGBA(226, 229, 238, 1)
+                  Height: =1
+                  Width: =Parent.TemplateWidth
+                  Y: =Parent.TemplateHeight - 1
+      - gtGaps:
+          Control: Classic/TextInput@2.3.2
+          Properties:
+            BorderColor: =RGBA(203, 208, 222, 1)
+            Default: =""
+            Font: =Font.'Segoe UI'
+            Height: =64
+            HintText: ="Gaps to send back (required to return)"
+            Mode: =TextMode.MultiLine
+            Size: =10
+            Width: =330
+            X: =Parent.Width - 352
+            Y: =Parent.Height - 186
+      - gtPass:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =Color.White
+            DisplayMode: =If(varBrief.Status = "With Gatekeeper" && CountRows(Filter(gtChecks.AllItems, !Ok)) = 0, DisplayMode.Edit, DisplayMode.Disabled)
+            Fill: =RGBA(21, 128, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =44
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: |-
+              =Set(
+                  varBrief,
+                  Patch(
+                      Briefs,
+                      varBrief,
+                      {
+                          Status: "Locked",
+                          GateResult: "Pass",
+                          GateRepliedAt: Now(),
+                          LockedAt: Now(),
+                          GatekeeperEmail: nfMeEmail,
+                          GateAttempts: varBrief.GateAttempts + 1,
+                          PassedFirstTime: If(IsBlank(varBrief.PassedFirstTime), "Yes", varBrief.PassedFirstTime)
+                      }
+                  )
+              );
+              Patch(BriefEvents, Defaults(BriefEvents), {BriefID: varBrief.BriefID, Event: "Gate passed · locked", ByEmail: nfMeEmail, At: Now(), Detail: "SLA clock starts"});
+              If(nfSendEmails, IfError(Office365Outlook.SendEmailV2(varBrief.PlannerEmail & ";" & Concat(Filter(DeskTeam, Role = "Buyer"), Email, ";"), "Ready for set-up: " & varBrief.BriefID & " · " & varBrief.Brand, "The brief passed the Gate and is locked. A buyer can accept it from the Set-up queue in the Brief Desk: " & varBrief.CampaignTaxonomy), Notify("Saved, but the email was not sent", NotificationType.Warning)));
+              Notify("Locked. SLA clock started.", NotificationType.Success);
+              Navigate(scrHome, ScreenTransition.None)
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =11
+            Text: ="Pass and lock"
+            Width: =330
+            X: =Parent.Width - 352
+            Y: =Parent.Height - 114
+      - gtReturnPlanner:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =Color.White
+            DisplayMode: =If(varBrief.Status = "With Gatekeeper" && !IsBlank(gtGaps.Text), DisplayMode.Edit, DisplayMode.Disabled)
+            Fill: =RGBA(200, 90, 40, 1)
+            Font: =Font.'Segoe UI'
+            Height: =44
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: |-
+              =Set(
+                  varBrief,
+                  Patch(
+                      Briefs,
+                      varBrief,
+                      {
+                          Status: "Returned",
+                          GateResult: "Fail",
+                          GateGaps: gtGaps.Text,
+                          GateRepliedAt: Now(),
+                          GatekeeperEmail: nfMeEmail,
+                          GateAttempts: varBrief.GateAttempts + 1,
+                          PassedFirstTime: If(IsBlank(varBrief.PassedFirstTime), "No", varBrief.PassedFirstTime)
+                      }
+                  )
+              );
+              Patch(BriefEvents, Defaults(BriefEvents), {BriefID: varBrief.BriefID, Event: "Gate returned to planner", ByEmail: nfMeEmail, At: Now(), Detail: gtGaps.Text});
+              If(nfSendEmails, IfError(Office365Outlook.SendEmailV2(varBrief.PlannerEmail, "Brief returned: " & varBrief.BriefID & " · " & varBrief.Brand, "The Brief Gate returned your brief. Gaps: " & gtGaps.Text), Notify("Saved, but the email was not sent", NotificationType.Warning)));
+              Reset(gtGaps);
+              Navigate(scrHome, ScreenTransition.None)
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =10
+            Text: ="Return to planner"
+            X: =Parent.Width - 352
+            Y: =Parent.Height - 60
+      - gtReturnAO:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =Color.White
+            DisplayMode: =If(varBrief.Status = "With Gatekeeper" && !IsBlank(gtGaps.Text), DisplayMode.Edit, DisplayMode.Disabled)
+            Fill: =RGBA(120, 90, 200, 1)
+            Font: =Font.'Segoe UI'
+            Height: =44
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: |-
+              =Set(
+                  varBrief,
+                  Patch(
+                      Briefs,
+                      varBrief,
+                      {
+                          Status: "With Ad Ops",
+                          GateGaps: gtGaps.Text,
+                          SentToAOAt: Now(),
+                          TaxonomyFixes: varBrief.TaxonomyFixes + 1
+                      }
+                  )
+              );
+              Patch(BriefEvents, Defaults(BriefEvents), {BriefID: varBrief.BriefID, Event: "Gate returned to Ad Ops (taxonomy)", ByEmail: nfMeEmail, At: Now(), Detail: gtGaps.Text});
+              If(nfSendEmails, IfError(Office365Outlook.SendEmailV2(varBrief.AdOpsEmail, "Taxonomy fix needed: " & varBrief.BriefID, "The Brief Gate returned the taxonomy. Fix: " & gtGaps.Text), Notify("Saved, but the email was not sent", NotificationType.Warning)));
+              Reset(gtGaps);
+              Navigate(scrHome, ScreenTransition.None)
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =10
+            Text: ="Return to Ad Ops"
+            X: =Parent.Width - 182
+            Y: =Parent.Height - 60

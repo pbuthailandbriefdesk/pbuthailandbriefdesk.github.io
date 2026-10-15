@@ -1,0 +1,7 @@
+# Business data exported from SharePoint (staff emails, budgets, PO numbers).
+# Load it into Supabase from your machine; never commit it.
+data/
+supabase/seed/
+
+.DS_Store
+Thumbs.db

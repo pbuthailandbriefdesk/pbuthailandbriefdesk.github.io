@@ -1,0 +1,3854 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrBrief:
+    Properties:
+      Fill: =RGBA(247, 248, 251, 1)
+      Height: =Max(App.Height, 560)
+      OnVisible: =Set(varBrief, LookUp(Briefs, ID = varBrief.ID)); Set(varConfirmDel, false); Set(varLevel, "IO")
+      Width: =Max(App.Width, 1024)
+    Children:
+      - brHeader:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =Color.White
+            Height: =64
+            Width: =Parent.Width
+      - brHeaderLine:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =nfGreen
+            Height: =3
+            Width: =Parent.Width
+            Y: =61
+      - brHeaderMark:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =nfNavy
+            Height: =61
+            Width: =4
+      - brTitle:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Size: =17
+            Text: ="Brief  ·  " & varBrief.BriefID & "  ·  v" & varBrief.BriefVersion
+            Width: =Parent.Width - 460
+            X: =If(true, 64, 24)
+            Y: =12
+      - brUser:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            Color: =RGBA(122, 128, 155, 1)
+            Font: =Font.'Segoe UI'
+            Height: =24
+            Size: =10
+            Text: =User().FullName & "  ·  " & nfRole
+            Width: =320
+            X: =Parent.Width - 344
+            Y: =20
+      - brBack:
+          Control: Classic/Icon@2.5.0
+          Properties:
+            AccessibleLabel: ="Back"
+            Color: =RGBA(16, 20, 61, 1)
+            Height: =32
+            Icon: =Icon.ChevronLeft
+            OnSelect: =Back()
+            Width: =32
+            X: =16
+            Y: =16
+      - brTabCampaign:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =If(varBriefTab = "Campaign", Color.White, nfNavy)
+            Fill: =If(varBriefTab = "Campaign", nfNavy, RGBA(241, 243, 248, 1))
+            Font: =Font.'Segoe UI'
+            Height: =34
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: =Set(varBriefTab, "Campaign")
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =11
+            Text: ="Campaign"
+            Width: =140
+            X: =24
+            Y: =76
+      - brDelete:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(200, 40, 40, 1)
+            BorderThickness: =1
+            Color: =If(varConfirmDel, Color.White, RGBA(200, 40, 40, 1))
+            Fill: =If(varConfirmDel, RGBA(200, 40, 40, 1), RGBA(255, 255, 255, 1))
+            Font: =Font.'Segoe UI'
+            Height: =34
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: |-
+              =If(
+                  !varConfirmDel,
+                  Set(varConfirmDel, true),
+                  Set(varConfirmDel, false);
+                  If(
+                      IsBlank(varBrief.SubmittedAt),
+                      RemoveIf(BriefAds, BriefID = varBrief.BriefID);
+                      RemoveIf(BriefAdGroups, BriefID = varBrief.BriefID);
+                      RemoveIf(BriefLines, BriefID = varBrief.BriefID);
+                      RemoveIf(BriefIOs, BriefID = varBrief.BriefID);
+                      RemoveIf(BriefEvents, BriefID = varBrief.BriefID);
+                      Remove(Briefs, LookUp(Briefs, ID = varBrief.ID));
+                      Notify("Draft deleted", NotificationType.Success),
+                      Set(varBrief, Patch(Briefs, varBrief, {Status: "Cancelled"}));
+                      Patch(BriefEvents, Defaults(BriefEvents), {BriefID: varBrief.BriefID, Event: "Brief cancelled", ByEmail: nfMeEmail, At: Now(), Detail: ""});
+                      Notify("Brief cancelled", NotificationType.Success)
+                  );
+                  Navigate(scrHome, ScreenTransition.None)
+              )
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =10
+            Text: =If(varConfirmDel, "Click again to confirm", If(IsBlank(varBrief.SubmittedAt), "Delete draft", "Cancel brief"))
+            Visible: =varBrief.Status in ["Draft", "Returned"] && (varBrief.PlannerEmail = nfMeEmail || nfRole = "Admin")
+            Width: =170
+            X: =Parent.Width - 396 - 170
+            Y: =76
+      - brStatus:
+          Control: Label@2.5.1
+          Properties:
+            Color: =If(varBrief.Status = "Returned", RGBA(161, 98, 7, 1), nfNavy)
+            Font: =Font.'Segoe UI'
+            Height: =34
+            Size: =10
+            Text: |-
+              ="Status: " & varBrief.Status & If(!IsBlank(varBrief.GateGaps) && varBrief.Status = "Returned", "  ·  Gaps from the Gate: " & varBrief.GateGaps, "")
+            Width: =Parent.Width - 330 - 396 - 180
+            X: =330
+            Y: =76
+      - brForm:
+          Control: Gallery@2.15.0
+          Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
+          Properties:
+            Height: =Parent.Height - 126
+            Items: =[1]
+            TemplateSize: =814
+            Visible: =varBriefTab = "Campaign"
+            Width: =Parent.Width - 396
+            X: =12
+            Y: =118
+          Children:
+            - brLTeam:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="Team"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 0 * (Parent.TemplateWidth - 24) / 3
+                  Y: =8
+            - brTeam:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.Team
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  Items: =["CPD", "Non-CPD"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> varBrief.Team, Set(varBrief, Patch(Briefs, varBrief, {Team: Self.Selected.Value})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 0 * (Parent.TemplateWidth - 24) / 3
+                  Y: =30
+            - brLBrand:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="Brand"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 0 * (Parent.TemplateWidth - 24) / 3
+                  Y: =70
+            - brBrand:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.Brand
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  Items: =Sort(ForAll(Brands As b, b.BrandName), Value)
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(
+                        Self.Selected.Value <> varBrief.Brand,
+                        With(
+                            {b: LookUp(Brands, BrandName = Self.Selected.Value)},
+                            Set(varBrief, Patch(Briefs, varBrief, {Brand: b.BrandName, AdvertiserName: b.AdvertiserName, Advertiser: b.AdvertiserID}))
+                        )
+                    )
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 0 * (Parent.TemplateWidth - 24) / 3
+                  Y: =92
+            - brLAdvertiserName:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="DV360 advertiser name (auto)"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 0 * (Parent.TemplateWidth - 24) / 3
+                  Y: =132
+            - brAdvertiserName:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.AdvertiserName
+                  DisplayMode: =DisplayMode.View
+                  Fill: =RGBA(241, 243, 248, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  HintText: ="Fills in from the brand"
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 0 * (Parent.TemplateWidth - 24) / 3
+                  Y: =154
+            - brLAdvertiser:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="DV360 advertiser ID (auto)"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 0 * (Parent.TemplateWidth - 24) / 3
+                  Y: =194
+            - brAdvertiser:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.Advertiser
+                  DisplayMode: =DisplayMode.View
+                  Fill: =RGBA(241, 243, 248, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  HintText: ="Fills in from the brand"
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 0 * (Parent.TemplateWidth - 24) / 3
+                  Y: =216
+            - brLCampaignName:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="Campaign name (draft)"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 0 * (Parent.TemplateWidth - 24) / 3
+                  Y: =256
+            - brCampaignName:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.CampaignName
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  HintText: ="Ad Ops confirms the taxonomy"
+                  OnChange: |-
+                    =If(Self.Text <> varBrief.CampaignName, Set(varBrief, Patch(Briefs, varBrief, {CampaignName: Self.Text})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 0 * (Parent.TemplateWidth - 24) / 3
+                  Y: =278
+            - brLLaunchDate:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="Launch date"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 0 * (Parent.TemplateWidth - 24) / 3
+                  Y: =318
+            - brLaunchDate:
+                Control: Classic/DatePicker@2.6.0
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  DefaultDate: =varBrief.LaunchDate
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  OnChange: |-
+                    =If(Self.SelectedDate <> varBrief.LaunchDate, Set(varBrief, Patch(Briefs, varBrief, {LaunchDate: Self.SelectedDate})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 0 * (Parent.TemplateWidth - 24) / 3
+                  Y: =340
+            - brLEndDate:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="End date"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 0 * (Parent.TemplateWidth - 24) / 3
+                  Y: =380
+            - brEndDate:
+                Control: Classic/DatePicker@2.6.0
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  DefaultDate: =varBrief.EndDate
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  OnChange: |-
+                    =If(Self.SelectedDate <> varBrief.EndDate, Set(varBrief, Patch(Briefs, varBrief, {EndDate: Self.SelectedDate})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 0 * (Parent.TemplateWidth - 24) / 3
+                  Y: =402
+            - brLObjective:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="Objective"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 0 * (Parent.TemplateWidth - 24) / 3
+                  Y: =442
+            - brObjective:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.Objective
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  Items: =["", "Awareness", "Consideration", "Action"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> varBrief.Objective, Set(varBrief, Patch(Briefs, varBrief, {Objective: Self.Selected.Value})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 0 * (Parent.TemplateWidth - 24) / 3
+                  Y: =464
+            - brLKPIModel:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="KPI model"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 0 * (Parent.TemplateWidth - 24) / 3
+                  Y: =504
+            - brKPIModel:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.KPIModel
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  Items: =["", "CPM", "CPV", "CPC", "CPA", "CPCV"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> varBrief.KPIModel, Set(varBrief, Patch(Briefs, varBrief, {KPIModel: Self.Selected.Value})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 0 * (Parent.TemplateWidth - 24) / 3
+                  Y: =526
+            - brLKPITarget:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="KPI target (THB)"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 0 * (Parent.TemplateWidth - 24) / 3
+                  Y: =566
+            - brKPITarget:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.KPITarget
+                  Font: =Font.'Segoe UI'
+                  Format: =TextFormat.Number
+                  Height: =34
+                  HintText: ="0"
+                  OnChange: |-
+                    =If(Value(Self.Text) <> varBrief.KPITarget, Set(varBrief, Patch(Briefs, varBrief, {KPITarget: Value(Self.Text)})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 0 * (Parent.TemplateWidth - 24) / 3
+                  Y: =588
+            - brLCategory:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="Naming · product category"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 1 * (Parent.TemplateWidth - 24) / 3
+                  Y: =8
+            - brCategory:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.Category
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  Items: =ForAll(nfCats, ThisRecord.Name)
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> varBrief.Category, Set(varBrief, Patch(Briefs, varBrief, {Category: Self.Selected.Value})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 1 * (Parent.TemplateWidth - 24) / 3
+                  Y: =30
+            - brLFranchise:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="Naming · line / franchise"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 1 * (Parent.TemplateWidth - 24) / 3
+                  Y: =70
+            - brFranchise:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.Franchise
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  HintText: ="e.g. multi / hydrating-cleanser"
+                  OnChange: |-
+                    =If(Self.Text <> varBrief.Franchise, Set(varBrief, Patch(Briefs, varBrief, {Franchise: Self.Text})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 1 * (Parent.TemplateWidth - 24) / 3
+                  Y: =92
+            - brLCampaignDesc:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="Naming · campaign description"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 1 * (Parent.TemplateWidth - 24) / 3
+                  Y: =132
+            - brCampaignDesc:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.CampaignDesc
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  HintText: ="No underscores, e.g. cleanser-oct26"
+                  OnChange: |-
+                    =If(Self.Text <> varBrief.CampaignDesc, Set(varBrief, Patch(Briefs, varBrief, {CampaignDesc: Self.Text})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 1 * (Parent.TemplateWidth - 24) / 3
+                  Y: =154
+            - brLCampaignOther:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="Naming · other / PO (optional)"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 1 * (Parent.TemplateWidth - 24) / 3
+                  Y: =194
+            - brCampaignOther:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.CampaignOther
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  HintText: ="e.g. 1oct-31oct2026-2026100294"
+                  OnChange: |-
+                    =If(Self.Text <> varBrief.CampaignOther, Set(varBrief, Patch(Briefs, varBrief, {CampaignOther: Self.Text})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 1 * (Parent.TemplateWidth - 24) / 3
+                  Y: =216
+            - brLPONumber:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="1 · PO number"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 1 * (Parent.TemplateWidth - 24) / 3
+                  Y: =256
+            - brPONumber:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.PONumber
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  HintText: ="Required"
+                  OnChange: |-
+                    =If(Self.Text <> varBrief.PONumber, Set(varBrief, Patch(Briefs, varBrief, {PONumber: Self.Text})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 1 * (Parent.TemplateWidth - 24) / 3
+                  Y: =278
+            - brLPOAmount:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="1 · PO amount (THB)"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 1 * (Parent.TemplateWidth - 24) / 3
+                  Y: =318
+            - brPOAmount:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.POAmount
+                  Font: =Font.'Segoe UI'
+                  Format: =TextFormat.Number
+                  Height: =34
+                  HintText: ="0"
+                  OnChange: |-
+                    =If(Value(Self.Text) <> varBrief.POAmount, Set(varBrief, Patch(Briefs, varBrief, {POAmount: Value(Self.Text)})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 1 * (Parent.TemplateWidth - 24) / 3
+                  Y: =340
+            - brLPOLink:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="1 · PO file link"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 1 * (Parent.TemplateWidth - 24) / 3
+                  Y: =380
+            - brPOLink:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.POLink
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  HintText: ="SharePoint / OneDrive link"
+                  OnChange: |-
+                    =If(Self.Text <> varBrief.POLink, Set(varBrief, Patch(Briefs, varBrief, {POLink: Self.Text})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 1 * (Parent.TemplateWidth - 24) / 3
+                  Y: =402
+            - brLTotalBudget:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="2 · Total budget incl. fee (THB)"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 1 * (Parent.TemplateWidth - 24) / 3
+                  Y: =442
+            - brTotalBudget:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.TotalBudget
+                  Font: =Font.'Segoe UI'
+                  Format: =TextFormat.Number
+                  Height: =34
+                  HintText: ="0"
+                  OnChange: |-
+                    =If(Value(Self.Text) <> varBrief.TotalBudget, Set(varBrief, Patch(Briefs, varBrief, {TotalBudget: Value(Self.Text)})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 1 * (Parent.TemplateWidth - 24) / 3
+                  Y: =464
+            - brLTracking:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="8 · Tracking"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 1 * (Parent.TemplateWidth - 24) / 3
+                  Y: =504
+            - brTracking:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.Tracking
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  HintText: ="Floodlight / pixel / UTM / 3P tag"
+                  OnChange: |-
+                    =If(Self.Text <> varBrief.Tracking, Set(varBrief, Patch(Briefs, varBrief, {Tracking: Self.Text})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 1 * (Parent.TemplateWidth - 24) / 3
+                  Y: =526
+            - brLBrandSafety:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="11 · Brand safety"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 1 * (Parent.TemplateWidth - 24) / 3
+                  Y: =566
+            - brBrandSafety:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.BrandSafety
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  HintText: ="Standard"
+                  OnChange: |-
+                    =If(Self.Text <> varBrief.BrandSafety, Set(varBrief, Patch(Briefs, varBrief, {BrandSafety: Self.Text})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 1 * (Parent.TemplateWidth - 24) / 3
+                  Y: =588
+            - brLReporting:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="12 · Reporting"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 1 * (Parent.TemplateWidth - 24) / 3
+                  Y: =628
+            - brReporting:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.Reporting
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  HintText: ="Standard"
+                  OnChange: |-
+                    =If(Self.Text <> varBrief.Reporting, Set(varBrief, Patch(Briefs, varBrief, {Reporting: Self.Text})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 1 * (Parent.TemplateWidth - 24) / 3
+                  Y: =650
+            - brLBriefType:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="Brief type"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 2 * (Parent.TemplateWidth - 24) / 3
+                  Y: =8
+            - brBriefType:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.BriefType
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  Items: =["New", "Extension", "Update"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> varBrief.BriefType, Set(varBrief, Patch(Briefs, varBrief, {BriefType: Self.Selected.Value})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 2 * (Parent.TemplateWidth - 24) / 3
+                  Y: =30
+            - brLEffectiveDate:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="Changes start on (extension / update)"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 2 * (Parent.TemplateWidth - 24) / 3
+                  Y: =70
+            - brEffectiveDate:
+                Control: Classic/DatePicker@2.6.0
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  DefaultDate: =varBrief.EffectiveDate
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  OnChange: |-
+                    =If(Self.SelectedDate <> varBrief.EffectiveDate, Set(varBrief, Patch(Briefs, varBrief, {EffectiveDate: Self.SelectedDate})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 2 * (Parent.TemplateWidth - 24) / 3
+                  Y: =92
+            - brLGeo:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="Geo targeting"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 2 * (Parent.TemplateWidth - 24) / 3
+                  Y: =132
+            - brGeo:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.Geo
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  HintText: ="Thailand"
+                  OnChange: |-
+                    =If(Self.Text <> varBrief.Geo, Set(varBrief, Patch(Briefs, varBrief, {Geo: Self.Text})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 2 * (Parent.TemplateWidth - 24) / 3
+                  Y: =154
+            - brLBrandLift:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="12 · Brand lift study?"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 2 * (Parent.TemplateWidth - 24) / 3
+                  Y: =194
+            - brBrandLift:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.BrandLift
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  Items: =["No", "Yes"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> varBrief.BrandLift, Set(varBrief, Patch(Briefs, varBrief, {BrandLift: Self.Selected.Value})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 2 * (Parent.TemplateWidth - 24) / 3
+                  Y: =216
+            - brLBLSNotes:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="12 · BLS budget, dates, questions"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 2 * (Parent.TemplateWidth - 24) / 3
+                  Y: =256
+            - brBLSNotes:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.BLSNotes
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  HintText: ="e.g. 2 questions, THB 120k, 1-15 Oct"
+                  OnChange: |-
+                    =If(Self.Text <> varBrief.BLSNotes, Set(varBrief, Patch(Briefs, varBrief, {BLSNotes: Self.Text})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 2 * (Parent.TemplateWidth - 24) / 3
+                  Y: =278
+            - brLIsTest:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="9 · Is this a test?"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 2 * (Parent.TemplateWidth - 24) / 3
+                  Y: =318
+            - brIsTest:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.IsTest
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  Items: =["No", "Yes"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> varBrief.IsTest, Set(varBrief, Patch(Briefs, varBrief, {IsTest: Self.Selected.Value})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 2 * (Parent.TemplateWidth - 24) / 3
+                  Y: =340
+            - brLTestDesign:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="9 · Test design"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 2 * (Parent.TemplateWidth - 24) / 3
+                  Y: =380
+            - brTestDesign:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.TestDesign
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  HintText: ="Test / control, variable, duration"
+                  OnChange: |-
+                    =If(Self.Text <> varBrief.TestDesign, Set(varBrief, Patch(Briefs, varBrief, {TestDesign: Self.Text})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 2 * (Parent.TemplateWidth - 24) / 3
+                  Y: =402
+            - brLHandoverNeeded:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="10 · Handover needed?"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 2 * (Parent.TemplateWidth - 24) / 3
+                  Y: =442
+            - brHandoverNeeded:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.HandoverNeeded
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  Items: =["No", "Yes"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> varBrief.HandoverNeeded, Set(varBrief, Patch(Briefs, varBrief, {HandoverNeeded: Self.Selected.Value})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 2 * (Parent.TemplateWidth - 24) / 3
+                  Y: =464
+            - brLHandoverNotes:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="10 · Handover notes"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 2 * (Parent.TemplateWidth - 24) / 3
+                  Y: =504
+            - brHandoverNotes:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.HandoverNotes
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  HintText: ="Status and what was agreed"
+                  OnChange: |-
+                    =If(Self.Text <> varBrief.HandoverNotes, Set(varBrief, Patch(Briefs, varBrief, {HandoverNotes: Self.Text})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 2 * (Parent.TemplateWidth - 24) / 3
+                  Y: =526
+            - brLIsException:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="Lead-time exception?"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 2 * (Parent.TemplateWidth - 24) / 3
+                  Y: =566
+            - brIsException:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.IsException
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  Items: =["No", "Yes"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> varBrief.IsException, Set(varBrief, Patch(Briefs, varBrief, {IsException: Self.Selected.Value})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 2 * (Parent.TemplateWidth - 24) / 3
+                  Y: =588
+            - brLExceptionApprover:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="Exception approved by"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 2 * (Parent.TemplateWidth - 24) / 3
+                  Y: =628
+            - brExceptionApprover:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.ExceptionApprover
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  HintText: ="Lec or planning lead"
+                  OnChange: |-
+                    =If(Self.Text <> varBrief.ExceptionApprover, Set(varBrief, Patch(Briefs, varBrief, {ExceptionApprover: Self.Text})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 2 * (Parent.TemplateWidth - 24) / 3
+                  Y: =650
+            - brLNotes:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: ="Notes for Ad Ops / buyer"
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 2 * (Parent.TemplateWidth - 24) / 3
+                  Y: =690
+            - brNotes:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =varBrief.Notes
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  OnChange: |-
+                    =If(Self.Text <> varBrief.Notes, Set(varBrief, Patch(Briefs, varBrief, {Notes: Self.Text})))
+                  Size: =11
+                  Width: =(Parent.TemplateWidth - 24) / 3 - 18
+                  X: =12 + 2 * (Parent.TemplateWidth - 24) / 3
+                  Y: =712
+            - brCampNameL:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =nfBlue
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =20
+                  Size: =10
+                  Text: ="Campaign name from the naming convention (Ad Ops confirms):"
+                  Width: =Parent.TemplateWidth - 24
+                  X: =12
+                  Y: =752
+            - brCampName:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(16, 20, 61, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =24
+                  Size: =10
+                  Text: =Lower(Substitute(Coalesce(LookUp(Brands, BrandName = varBrief.Brand).BrandCode, "X") & "_" & Coalesce(LookUp(nfCats, Name = varBrief.Category).Abv, "X") & "_" & Coalesce(varBrief.Franchise, "X") & "_" & Coalesce(varBrief.CampaignDesc, "X") & If(IsBlank(varBrief.CampaignOther), "", "_" & varBrief.CampaignOther), " ", "-"))
+                  Width: =Parent.TemplateWidth - 24
+                  X: =12
+                  Y: =774
+      - brTabStruct:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =If(varBriefTab = "Structure", Color.White, nfNavy)
+            Fill: =If(varBriefTab = "Structure", nfNavy, RGBA(241, 243, 248, 1))
+            Font: =Font.'Segoe UI'
+            Height: =34
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: =Set(varBriefTab, "Structure")
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =11
+            Text: ="Structure (" & CountRows(Filter(BriefIOs, BriefID = varBrief.BriefID)) & " IO)"
+            Width: =150
+            X: =172
+            Y: =76
+      - brCrumb0:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Align: =Align.Left
+            BorderThickness: =0
+            Color: =nfBlue
+            Fill: =Color.Transparent
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =30
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: =Set(varLevel, "IO")
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =10
+            Text: ="Campaign › Insertion orders"
+            Visible: =varBriefTab = "Structure"
+            Width: =220
+            X: =12
+            Y: =118
+      - brCrumb1:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Align: =Align.Left
+            BorderThickness: =0
+            Color: =nfBlue
+            Fill: =Color.Transparent
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =30
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: =Set(varLevel, "LI")
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =10
+            Text: ="› IO " & varIO.IONo & " · " & varIO.IOType
+            Visible: =varBriefTab = "Structure" && varLevel in ["LI", "AG", "AD"]
+            Width: =200
+            X: =232
+            Y: =118
+      - brCrumb2:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Align: =Align.Left
+            BorderThickness: =0
+            Color: =nfBlue
+            Fill: =Color.Transparent
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =30
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: =Set(varLevel, If(varIO.Channel = "YouTube", "AG", "AD"))
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =10
+            Text: ="› Line item " & varIO.IONo & "." & varLI.LineNo & " · " & varLI.Format
+            Visible: =varBriefTab = "Structure" && varLevel in ["AG", "AD"]
+            Width: =220
+            X: =432
+            Y: =118
+      - brCrumb3:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Align: =Align.Left
+            BorderThickness: =0
+            Color: =nfBlue
+            Fill: =Color.Transparent
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =30
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: =Set(varLevel, "AD")
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =10
+            Text: ="› Ad group " & varIO.IONo & "." & varLI.LineNo & "." & varAG.AGNo
+            Visible: =varBriefTab = "Structure" && varLevel = "AD" && varIO.Channel = "YouTube"
+            Width: =200
+            X: =652
+            Y: =118
+      - brAddIO:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =RGBA(16, 20, 61, 1)
+            Fill: =nfGreen
+            Font: =Font.'Segoe UI'
+            Height: =32
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: |-
+              =Patch(
+                  BriefIOs,
+                  Defaults(BriefIOs),
+                  {
+                      BriefID: varBrief.BriefID,
+                      IONo: Coalesce(Max(Filter(BriefIOs, BriefID = varBrief.BriefID), IONo), 0) + 1,
+                      Channel: "YouTube",
+                      IOType: "Video",
+                      IOFormat: "VRC",
+                      IOObjective: Switch(varBrief.Objective, "Consideration", "Drive_online_action_or_visits", "Action", "Drive_online_action_or_visits", "Raise_awareness_of_my_brand_or_product"),
+                      KPIModel: "CPM",
+                      Pacing: "Even",
+                      StartDate: varBrief.LaunchDate,
+                      EndDate: varBrief.EndDate
+                  }
+              )
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =11
+            Text: ="+ Add insertion order"
+            Visible: =varBriefTab = "Structure" && varLevel = "IO"
+            Width: =190
+            X: =12
+            Y: =156
+      - brIOTotal:
+          Control: Label@2.5.1
+          Properties:
+            Color: =If(Round(Sum(Filter(BriefIOs, BriefID = varBrief.BriefID), Budget), 2) = Round(varBrief.TotalBudget, 2), RGBA(21, 128, 61, 1), RGBA(196, 40, 40, 1))
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =32
+            Size: =10
+            Text: ="IOs total THB " & Text(Coalesce(Sum(Filter(BriefIOs, BriefID = varBrief.BriefID), Budget), 0), "#,##0") & "  ·  Campaign THB " & Text(Coalesce(varBrief.TotalBudget, 0), "#,##0")
+            Visible: =varBriefTab = "Structure" && varLevel = "IO"
+            Width: =Parent.Width - 396 - 212
+            X: =212
+            Y: =156
+      - brIOs:
+          Control: Gallery@2.15.0
+          Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
+          Properties:
+            Height: =Parent.Height - 204
+            Items: =Sort(Filter(BriefIOs, BriefID = varBrief.BriefID), IONo)
+            TemplateSize: =244
+            Visible: =varBriefTab = "Structure" && varLevel = "IO"
+            Width: =Parent.Width - 396
+            X: =12
+            Y: =193
+          Children:
+            - brIOSep:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =RGBA(226, 229, 238, 1)
+                  Height: =1
+                  Width: =Parent.TemplateWidth
+                  Y: =Parent.TemplateHeight - 1
+            - brIONo:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =nfBlue
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =28
+                  Size: =12
+                  Text: ="IO " & ThisItem.IONo
+                  Width: =52
+                  X: =6
+                  Y: =22
+            - brIOc1:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Channel"
+                  Width: =(Parent.TemplateWidth - 124) * 0.12 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =4
+            - brIOc2:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="IO type"
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.12
+                  Y: =4
+            - brIOc2b:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Ad format (for naming)"
+                  Width: =(Parent.TemplateWidth - 124) * 0.13 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.26
+                  Y: =4
+            - brIOc3:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Budget incl. fee (THB)"
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.39
+                  Y: =4
+            - brIOc4:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Start"
+                  Width: =(Parent.TemplateWidth - 124) * 0.15 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.53
+                  Y: =4
+            - brIOc5:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="End"
+                  Width: =(Parent.TemplateWidth - 124) * 0.15 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.68
+                  Y: =4
+            - brIOc6:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Pacing"
+                  Width: =(Parent.TemplateWidth - 124) * 0.17 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.83
+                  Y: =4
+            - brIOChannel:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Channel
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =["YouTube", "Non-YouTube"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(
+                        Self.Selected.Value <> ThisItem.Channel,
+                        With(
+                            {yt: Self.Selected.Value = "YouTube", n: ThisItem.IONo},
+                            Patch(BriefIOs, ThisItem, {Channel: Self.Selected.Value, IOType: If(yt, "Video", "Display"), IOFormat: If(yt, "VRC", "Display")});
+                            UpdateIf(BriefLines, BriefID = varBrief.BriefID && IONo = n, {Format: If(yt, "VRC", "Display")});
+                            If(
+                                yt,
+                                RemoveIf(BriefAds, BriefID = varBrief.BriefID && IONo = n && AGNo = 0),
+                                RemoveIf(BriefAds, BriefID = varBrief.BriefID && IONo = n && AGNo <> 0);
+                                RemoveIf(BriefAdGroups, BriefID = varBrief.BriefID && IONo = n)
+                            )
+                        )
+                    )
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.12 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =20
+            - brIOType:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =If(ThisItem.IOType in ["Video", "Display", "TrueView", "Audio", "DOOH"], ThisItem.IOType, If(ThisItem.Channel = "YouTube", "Video", "Display"))
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =["Video", "Display", "TrueView", "Audio", "DOOH"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.IOType, Patch(BriefIOs, ThisItem, {IOType: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.12
+                  Y: =20
+            - brIOFormat:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =If(ThisItem.Channel = "YouTube", If(ThisItem.IOFormat in ["VRC", "VVC", "Non-skip", "Bumper", "Shorts"], ThisItem.IOFormat, "VRC"), If(ThisItem.IOFormat in ["Display", "Video", "Audio", "CTV / OTT", "Native"], ThisItem.IOFormat, "Display"))
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =If(ThisItem.Channel = "YouTube", ["VRC", "VVC", "Non-skip", "Bumper", "Shorts"], ["Display", "Video", "Audio", "CTV / OTT", "Native"])
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(
+                        Self.Selected.Value <> ThisItem.IOFormat,
+                        With(
+                            {f: Self.Selected.Value, n: ThisItem.IONo},
+                            Patch(BriefIOs, ThisItem, {IOFormat: f});
+                            If(ThisItem.Channel = "YouTube", UpdateIf(BriefLines, BriefID = varBrief.BriefID && IONo = n, {Format: f, YTLIType: Switch(f, "VRC", "for-reach", "VVC", "video-view", "Non-skip", "in-stream non-skip", "Bumper", "bumper", "Shorts", "youtube-short", "for-reach")}))
+                        )
+                    )
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.13 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.26
+                  Y: =20
+            - brIOBudget:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Budget
+                  Font: =Font.'Segoe UI'
+                  Format: =TextFormat.Number
+                  Height: =32
+                  HintText: ="0"
+                  OnChange: |-
+                    =If(Value(Self.Text) <> ThisItem.Budget, Patch(BriefIOs, ThisItem, {Budget: Value(Self.Text)}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.39
+                  Y: =20
+            - brIOStart:
+                Control: Classic/DatePicker@2.6.0
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  DefaultDate: =ThisItem.StartDate
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  OnChange: |-
+                    =If(Self.SelectedDate <> ThisItem.StartDate, Patch(BriefIOs, ThisItem, {StartDate: Self.SelectedDate}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.15 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.53
+                  Y: =20
+            - brIOEnd:
+                Control: Classic/DatePicker@2.6.0
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  DefaultDate: =ThisItem.EndDate
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  OnChange: |-
+                    =If(Self.SelectedDate <> ThisItem.EndDate, Patch(BriefIOs, ThisItem, {EndDate: Self.SelectedDate}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.15 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.68
+                  Y: =20
+            - brIOPacing:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Pacing
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =["Even", "ASAP", "Ahead"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.Pacing, Patch(BriefIOs, ThisItem, {Pacing: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.17 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.83
+                  Y: =20
+            - brIOc7:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Buying type"
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =58
+            - brIOc8:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Deal ID (PG / PMP)"
+                  Width: =(Parent.TemplateWidth - 124) * 0.16 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.14
+                  Y: =58
+            - brIOc9:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="KPI model"
+                  Width: =(Parent.TemplateWidth - 124) * 0.1 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.3
+                  Y: =58
+            - brIOc10:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="KPI target"
+                  Width: =(Parent.TemplateWidth - 124) * 0.1 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.4
+                  Y: =58
+            - brIOc11:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Frequency cap"
+                  Width: =(Parent.TemplateWidth - 124) * 0.16 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.5
+                  Y: =58
+            - brIOc12:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Verification (IAS / DV)"
+                  Width: =(Parent.TemplateWidth - 124) * 0.34 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.66
+                  Y: =58
+            - brIOBuying:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.BuyingType
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =["", "Open auction", "PG", "PMP"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.BuyingType, Patch(BriefIOs, ThisItem, {BuyingType: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =74
+            - brIODeal:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.DealID
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.DealID, Patch(BriefIOs, ThisItem, {DealID: Self.Text}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.16 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.14
+                  Y: =74
+            - brIOKPI:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.KPIModel
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =["", "CPV", "CPM", "Viewability", "CPIAVC", "CPA", "CPC", "CTR"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.KPIModel, Patch(BriefIOs, ThisItem, {KPIModel: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.1 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.3
+                  Y: =74
+            - brIOc13:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Campaign objective (naming)"
+                  Width: =(Parent.TemplateWidth - 124) * 0.3 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =112
+            - brIOc14:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Other / PO including (optional)"
+                  Width: =(Parent.TemplateWidth - 124) * 0.22 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.3
+                  Y: =112
+            - brIOc15:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="IO name (from the naming convention)"
+                  Width: =(Parent.TemplateWidth - 124) * 0.48 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.52
+                  Y: =112
+            - brIOObj:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =Coalesce(ThisItem.IOObjective, "Raise_awareness_of_my_brand_or_product")
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =ForAll(nfObjs, ThisRecord.Name)
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.IOObjective, Patch(BriefIOs, ThisItem, {IOObjective: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.3 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =128
+            - brIOOther:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.IOOther
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  HintText: ="e.g. others-sk-2p-oa-vrc-std-skip"
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.IOOther, Patch(BriefIOs, ThisItem, {IOOther: Self.Text}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.22 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.3
+                  Y: =128
+            - brIOName:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =nfBlue
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  Size: =9
+                  Text: =Lower(Substitute(Coalesce(LookUp(Brands, BrandName = varBrief.Brand).BrandCode, "X") & "_" & Coalesce(LookUp(nfCats, Name = varBrief.Category).Abv, "X") & "_" & Coalesce(varBrief.Franchise, "X") & "_" & Coalesce(varBrief.CampaignDesc, "X") & "_" & Coalesce(ThisItem.IOType, "X") & "-" & Coalesce(LookUp(nfObjs, Name = ThisItem.IOObjective).Abv, "X") & "-" & Coalesce(ThisItem.KPIModel, "X") & If(IsBlank(ThisItem.IOOther), "", "_" & ThisItem.IOOther), " ", "-"))
+                  VerticalAlign: =VerticalAlign.Top
+                  Width: =(Parent.TemplateWidth - 124) * 0.48 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.52
+                  Y: =128
+            - brIOKPIT:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.KPITarget
+                  Font: =Font.'Segoe UI'
+                  Format: =TextFormat.Number
+                  Height: =32
+                  HintText: ="0"
+                  OnChange: |-
+                    =If(Value(Self.Text) <> ThisItem.KPITarget, Patch(BriefIOs, ThisItem, {KPITarget: Value(Self.Text)}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.1 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.4
+                  Y: =74
+            - brIOFreq:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.FreqCap
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  HintText: ="e.g. 3 / week"
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.FreqCap, Patch(BriefIOs, ThisItem, {FreqCap: Self.Text}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.16 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.5
+                  Y: =74
+            - brIOVerif:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Verification
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  HintText: ="e.g. IAS brand safety + viewability"
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.Verification, Patch(BriefIOs, ThisItem, {Verification: Self.Text}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.34 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.66
+                  Y: =74
+            - brIOInfo:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =If(Round(Sum(Filter(BriefLines, BriefID = varBrief.BriefID && IONo = ThisItem.IONo), Budget), 2) = Round(ThisItem.Budget, 2) && ThisItem.StartDate >= varBrief.LaunchDate && ThisItem.EndDate <= varBrief.EndDate, RGBA(21, 128, 61, 1), RGBA(196, 40, 40, 1))
+                  Font: =Font.'Segoe UI'
+                  Height: =18
+                  Size: =9
+                  Text: |-
+                    =With(
+                        {L: Filter(BriefLines, BriefID = varBrief.BriefID && IONo = ThisItem.IONo)},
+                        CountRows(L) & " line items  ·  THB " & Text(Coalesce(Sum(L, Budget), 0), "#,##0") & " of THB " & Text(ThisItem.Budget, "#,##0") &
+                        If(Round(Sum(L, Budget), 2) <> Round(ThisItem.Budget, 2), "  ·  ✗ line budgets must add up to the IO budget", "") &
+                        If(ThisItem.StartDate < varBrief.LaunchDate || ThisItem.EndDate > varBrief.EndDate, "  ·  ✗ IO dates outside the campaign flight", "")
+                    )
+                  Width: =(Parent.TemplateWidth - 124)
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =220
+            - brIOOpen:
+                Control: Classic/Icon@2.5.0
+                Properties:
+                  AccessibleLabel: ="Open line items"
+                  Color: =nfBlue
+                  Height: =40
+                  Icon: =Icon.ChevronRight
+                  OnSelect: =Set(varIO, ThisItem); Set(varLevel, "LI")
+                  Width: =40
+                  X: =Parent.TemplateWidth - 44
+                  Y: =40
+            - brIODel:
+                Control: Classic/Icon@2.5.0
+                Properties:
+                  AccessibleLabel: ="Delete insertion order"
+                  Color: =RGBA(196, 40, 40, 1)
+                  Height: =28
+                  Icon: =Icon.Trash
+                  OnSelect: |-
+                    =RemoveIf(BriefAds, BriefID = varBrief.BriefID && IONo = ThisItem.IONo);
+                    RemoveIf(BriefAdGroups, BriefID = varBrief.BriefID && IONo = ThisItem.IONo);
+                    RemoveIf(BriefLines, BriefID = varBrief.BriefID && IONo = ThisItem.IONo);
+                    Remove(BriefIOs, ThisItem)
+                  Width: =28
+                  X: =Parent.TemplateWidth - 80
+                  Y: =46
+            - brIOc16:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: |-
+                    ="This brief: budget segment start"
+                  Width: =(Parent.TemplateWidth - 124) * 0.17 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =166
+            - brIOc17:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Segment end"
+                  Width: =(Parent.TemplateWidth - 124) * 0.15 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.17
+                  Y: =166
+            - brIOc18:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Already booked before (THB)"
+                  Width: =(Parent.TemplateWidth - 124) * 0.17 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.32
+                  Y: =166
+            - brIOc19:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: |-
+                    ="Freq cap: exposures"
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.49
+                  Y: =166
+            - brIOc20:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="per"
+                  Width: =(Parent.TemplateWidth - 124) * 0.12 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.63
+                  Y: =166
+            - brIOSegS:
+                Control: Classic/DatePicker@2.6.0
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  DefaultDate: =ThisItem.SegmentStart
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  OnChange: |-
+                    =If(Self.SelectedDate <> ThisItem.SegmentStart, Patch(BriefIOs, ThisItem, {SegmentStart: Self.SelectedDate}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.17 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =182
+            - brIOSegE:
+                Control: Classic/DatePicker@2.6.0
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  DefaultDate: =ThisItem.SegmentEnd
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  OnChange: |-
+                    =If(Self.SelectedDate <> ThisItem.SegmentEnd, Patch(BriefIOs, ThisItem, {SegmentEnd: Self.SelectedDate}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.15 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.17
+                  Y: =182
+            - brIOPrior:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.PriorBudget
+                  Font: =Font.'Segoe UI'
+                  Format: =TextFormat.Number
+                  Height: =32
+                  HintText: ="0 if new IO"
+                  OnChange: |-
+                    =If(Value(Self.Text) <> ThisItem.PriorBudget, Patch(BriefIOs, ThisItem, {PriorBudget: Value(Self.Text)}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.17 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.32
+                  Y: =182
+            - brIOFreqN:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.FreqExposures
+                  Font: =Font.'Segoe UI'
+                  Format: =TextFormat.Number
+                  Height: =32
+                  HintText: ="e.g. 3"
+                  OnChange: |-
+                    =If(Value(Self.Text) <> ThisItem.FreqExposures, Patch(BriefIOs, ThisItem, {FreqExposures: Value(Self.Text)}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.49
+                  Y: =182
+            - brIOFreqP:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.FreqPeriod
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =["", "Day", "Week", "Month", "Lifetime"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.FreqPeriod, Patch(BriefIOs, ThisItem, {FreqPeriod: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.12 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.63
+                  Y: =182
+            - brIOLife:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(16, 20, 61, 1)
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =32
+                  Size: =9
+                  Text: ="IO lifetime THB " & Text(Coalesce(ThisItem.PriorBudget, 0) + Coalesce(ThisItem.Budget, 0), "#,##0.00")
+                  Width: =(Parent.TemplateWidth - 124) * 0.25 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.75
+                  Y: =182
+      - brAddLI:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =RGBA(16, 20, 61, 1)
+            Fill: =nfGreen
+            Font: =Font.'Segoe UI'
+            Height: =32
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: |-
+              =Patch(
+                  BriefLines,
+                  Defaults(BriefLines),
+                  {
+                      BriefID: varBrief.BriefID,
+                      IONo: varIO.IONo,
+                      LineNo: Coalesce(Max(Filter(BriefLines, BriefID = varBrief.BriefID && IONo = varIO.IONo), LineNo), 0) + 1,
+                      Format: Coalesce(LookUp(BriefIOs, BriefID = varBrief.BriefID && IONo = varIO.IONo).IOFormat, If(varIO.Channel = "YouTube", "VRC", "Display")),
+                      YTLIType: If(varIO.Channel = "YouTube", Switch(Coalesce(LookUp(BriefIOs, BriefID = varBrief.BriefID && IONo = varIO.IONo).IOFormat, "VRC"), "VRC", "for-reach", "VVC", "video-view", "Non-skip", "in-stream non-skip", "Bumper", "bumper", "Shorts", "youtube-short", "for-reach"), Blank()),
+                      DealType: If(varIO.Channel = "YouTube", "Youtube", "OpenEx"),
+                      Gender: "M-W",
+                      Language: "Thai",
+                      Device: "All",
+                      Environment: "All",
+                      Sustainability: "No optimisation",
+                      ServiceDisc: "NO",
+                      StartDate: varIO.StartDate,
+                      EndDate: varIO.EndDate
+                  }
+              )
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =11
+            Text: ="+ Add line item"
+            Visible: =varBriefTab = "Structure" && varLevel = "LI"
+            Width: =170
+            X: =12
+            Y: =156
+      - brLITotal:
+          Control: Label@2.5.1
+          Properties:
+            Color: =If(Round(Sum(Filter(BriefLines, BriefID = varBrief.BriefID && IONo = varIO.IONo), Budget), 2) = Round(LookUp(BriefIOs, BriefID = varBrief.BriefID && IONo = varIO.IONo).Budget, 2), RGBA(21, 128, 61, 1), RGBA(196, 40, 40, 1))
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =32
+            Size: =10
+            Text: |-
+              =With({io: LookUp(BriefIOs, BriefID = varBrief.BriefID && IONo = varIO.IONo)},
+              "Line items total THB " & Text(Coalesce(Sum(Filter(BriefLines, BriefID = varBrief.BriefID && IONo = varIO.IONo), Budget), 0), "#,##0") & "  ·  IO THB " & Text(Coalesce(io.Budget, 0), "#,##0") &
+              "  ·  IO flight " & Text(io.StartDate, "dd mmm") & " – " & Text(io.EndDate, "dd mmm yy"))
+            Visible: =varBriefTab = "Structure" && varLevel = "LI"
+            Width: =Parent.Width - 396 - 192
+            X: =192
+            Y: =156
+      - brLIs:
+          Control: Gallery@2.15.0
+          Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
+          Properties:
+            Height: =Parent.Height - 204
+            Items: =Sort(Filter(BriefLines, BriefID = varBrief.BriefID && IONo = varIO.IONo), LineNo)
+            TemplateSize: =272
+            Visible: =varBriefTab = "Structure" && varLevel = "LI"
+            Width: =Parent.Width - 396
+            X: =12
+            Y: =193
+          Children:
+            - brLISep:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =RGBA(226, 229, 238, 1)
+                  Height: =1
+                  Width: =Parent.TemplateWidth
+                  Y: =Parent.TemplateHeight - 1
+            - brLINo:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =nfBlue
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =28
+                  Size: =12
+                  Text: =varIO.IONo & "." & ThisItem.LineNo
+                  Width: =52
+                  X: =6
+                  Y: =22
+            - brLIc1:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Format"
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =4
+            - brLIc2:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Inventory / exchange"
+                  Width: =(Parent.TemplateWidth - 124) * 0.2 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.14
+                  Y: =4
+            - brLIc3:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Budget incl. fee (THB)"
+                  Width: =(Parent.TemplateWidth - 124) * 0.16 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.34
+                  Y: =4
+            - brLIc4:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Start"
+                  Width: =(Parent.TemplateWidth - 124) * 0.17 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.5
+                  Y: =4
+            - brLIc5:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="End"
+                  Width: =(Parent.TemplateWidth - 124) * 0.17 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.67
+                  Y: =4
+            - brLIc6:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Bid strategy"
+                  Width: =(Parent.TemplateWidth - 124) * 0.16 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.84
+                  Y: =4
+            - brLIFormat:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =If(varIO.Channel = "YouTube", If(ThisItem.Format in ["VRC", "VVC", "Non-skip", "Bumper", "Shorts"], ThisItem.Format, "VRC"), If(ThisItem.Format in ["Display", "Video", "Audio", "CTV / OTT", "Native"], ThisItem.Format, "Display"))
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =If(varIO.Channel = "YouTube", ["VRC", "VVC", "Non-skip", "Bumper", "Shorts"], ["Display", "Video", "Audio", "CTV / OTT", "Native"])
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.Format, Patch(BriefLines, ThisItem, {Format: Self.Selected.Value, YTLIType: If(varIO.Channel = "YouTube", Switch(Self.Selected.Value, "VRC", "for-reach", "VVC", "video-view", "Non-skip", "in-stream non-skip", "Bumper", "bumper", "Shorts", "youtube-short", "for-reach"), ThisItem.YTLIType)}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =20
+            - brLIInv:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Inventory
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  HintText: ="e.g. YouTube / open exchange"
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.Inventory, Patch(BriefLines, ThisItem, {Inventory: Self.Text}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.2 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.14
+                  Y: =20
+            - brLIBudget:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Budget
+                  Font: =Font.'Segoe UI'
+                  Format: =TextFormat.Number
+                  Height: =32
+                  HintText: ="0"
+                  OnChange: |-
+                    =If(Value(Self.Text) <> ThisItem.Budget, Patch(BriefLines, ThisItem, {Budget: Value(Self.Text)}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.16 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.34
+                  Y: =20
+            - brLIStart:
+                Control: Classic/DatePicker@2.6.0
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  DefaultDate: =ThisItem.StartDate
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  OnChange: |-
+                    =If(Self.SelectedDate <> ThisItem.StartDate, Patch(BriefLines, ThisItem, {StartDate: Self.SelectedDate}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.17 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.5
+                  Y: =20
+            - brLIEnd:
+                Control: Classic/DatePicker@2.6.0
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  DefaultDate: =ThisItem.EndDate
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  OnChange: |-
+                    =If(Self.SelectedDate <> ThisItem.EndDate, Patch(BriefLines, ThisItem, {EndDate: Self.SelectedDate}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.17 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.67
+                  Y: =20
+            - brLIBid:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.BidStrategy
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =["", "Target CPM", "Target CPV", "Max CPM", "Fixed CPM", "Maximize conversions", "Target CPA"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.BidStrategy, Patch(BriefLines, ThisItem, {BidStrategy: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.16 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.84
+                  Y: =20
+            - brLIc7:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Bid / target (THB)"
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =58
+            - brLIBidT:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.BidTarget
+                  Font: =Font.'Segoe UI'
+                  Format: =TextFormat.Number
+                  Height: =32
+                  HintText: ="0"
+                  OnChange: |-
+                    =If(Value(Self.Text) <> ThisItem.BidTarget, Patch(BriefLines, ThisItem, {BidTarget: Value(Self.Text)}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =74
+            - brLIc8:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: |-
+                    ="Targeting: audience, demographics, geo"
+                  Visible: =!(varIO.Channel = "YouTube")
+                  Width: =(Parent.TemplateWidth - 124) * 0.46 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.14
+                  Y: =58
+            - brLIc9:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Exclusions"
+                  Visible: =!(varIO.Channel = "YouTube")
+                  Width: =(Parent.TemplateWidth - 124) * 0.4 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.6
+                  Y: =58
+            - brLIAud:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Audience
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  HintText: ="5 · Affinity / in-market / 1P / custom, age, gender, geo"
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.Audience, Patch(BriefLines, ThisItem, {Audience: Self.Text}))
+                  Size: =10
+                  Visible: =!(varIO.Channel = "YouTube")
+                  Width: =(Parent.TemplateWidth - 124) * 0.46 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.14
+                  Y: =74
+            - brLIExcl:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Exclusions
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  HintText: ="Audiences, apps, sites to exclude"
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.Exclusions, Patch(BriefLines, ThisItem, {Exclusions: Self.Text}))
+                  Size: =10
+                  Visible: =!(varIO.Channel = "YouTube")
+                  Width: =(Parent.TemplateWidth - 124) * 0.4 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.6
+                  Y: =74
+            - brLIYTNote:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =10
+                  Text: |-
+                    ="YouTube: audience descriptions are set per ad group →"
+                  Visible: =varIO.Channel = "YouTube"
+                  Width: =(Parent.TemplateWidth - 124) * 0.86 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.14
+                  Y: =80
+            - brLIn1:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Deal type (naming)"
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =112
+            - brLIn2:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="YouTube LI type"
+                  Visible: =varIO.Channel = "YouTube"
+                  Width: =(Parent.TemplateWidth - 124) * 0.16 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.14
+                  Y: =112
+            - brLIn3:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Audience targeting"
+                  Width: =(Parent.TemplateWidth - 124) * 0.26 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.3
+                  Y: =112
+            - brLIn4:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Tactic / similar aud. details"
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.56
+                  Y: =112
+            - brLIn5:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Gender"
+                  Width: =(Parent.TemplateWidth - 124) * 0.1 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.7
+                  Y: =112
+            - brLIn6:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Age min"
+                  Width: =(Parent.TemplateWidth - 124) * 0.1 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.8
+                  Y: =112
+            - brLIn7:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Age max"
+                  Width: =(Parent.TemplateWidth - 124) * 0.1 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.9
+                  Y: =112
+            - brLIDeal:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.DealType
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =["OpenEx", "Other", "Preferred deals", "Private auction", "Programmatic Guaranteed", "Tag based", "Youtube"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.DealType, Patch(BriefLines, ThisItem, {DealType: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =128
+            - brLITV:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.YTLIType
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =["bumper", "dco", "demand gen", "director mix", "discovery", "display", "for-reach", "for-shopping", "in-feed", "in-stream skip", "in-stream non-skip", "masthead", "outstream", "video-action", "video-reach", "video-view", "vto-instream", "youtube-short"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.YTLIType, Patch(BriefLines, ThisItem, {YTLIType: Self.Selected.Value}))
+                  Size: =10
+                  Visible: =varIO.Channel = "YouTube"
+                  Width: =(Parent.TemplateWidth - 124) * 0.16 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.14
+                  Y: =128
+            - brLIAudT:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.AudTargeting
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =ForAll(nfAuds, ThisRecord.Name)
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.AudTargeting, Patch(BriefLines, ThisItem, {AudTargeting: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.26 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.3
+                  Y: =128
+            - brLITac:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.AudTactic
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  HintText: ="e.g. int / viview"
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.AudTactic, Patch(BriefLines, ThisItem, {AudTactic: Self.Text}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.56
+                  Y: =128
+            - brLIGen:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Gender
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =["M-W", "W", "M"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.Gender, Patch(BriefLines, ThisItem, {Gender: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.1 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.7
+                  Y: =128
+            - brLIAgeMin:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.AgeMin
+                  Font: =Font.'Segoe UI'
+                  Format: =TextFormat.Number
+                  Height: =32
+                  HintText: ="18"
+                  OnChange: |-
+                    =If(Value(Self.Text) <> ThisItem.AgeMin, Patch(BriefLines, ThisItem, {AgeMin: Value(Self.Text)}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.1 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.8
+                  Y: =128
+            - brLIAgeMax:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.AgeMax
+                  Font: =Font.'Segoe UI'
+                  Format: =TextFormat.Number
+                  Height: =32
+                  HintText: ="44"
+                  OnChange: |-
+                    =If(Value(Self.Text) <> ThisItem.AgeMax, Patch(BriefLines, ThisItem, {AgeMax: Value(Self.Text)}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.1 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.9
+                  Y: =128
+            - brLIn8:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Language"
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =166
+            - brLIn9:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Device"
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.14
+                  Y: =166
+            - brLIn10:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Environment"
+                  Width: =(Parent.TemplateWidth - 124) * 0.1 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.28
+                  Y: =166
+            - brLIn11:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Dimensions / other (opt.)"
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.38
+                  Y: =166
+            - brLIn12:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Sustainability"
+                  Width: =(Parent.TemplateWidth - 124) * 0.2 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.52
+                  Y: =166
+            - brLIn13:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Service discov."
+                  Width: =(Parent.TemplateWidth - 124) * 0.1 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.72
+                  Y: =166
+            - brLIn14:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Publisher name"
+                  Width: =(Parent.TemplateWidth - 124) * 0.18 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.82
+                  Y: =166
+            - brLILang:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Language
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =ForAll(nfLangs, ThisRecord.Name)
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.Language, Patch(BriefLines, ThisItem, {Language: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =182
+            - brLIDev:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Device
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =ForAll(nfDevices, ThisRecord.Name)
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.Device, Patch(BriefLines, ThisItem, {Device: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.14
+                  Y: =182
+            - brLIEnv:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Environment
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =["All", "App", "Web"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.Environment, Patch(BriefLines, ThisItem, {Environment: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.1 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.28
+                  Y: =182
+            - brLIDims:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Dims
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  HintText: ="optional"
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.Dims, Patch(BriefLines, ThisItem, {Dims: Self.Text}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.38
+                  Y: =182
+            - brLISust:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Sustainability
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =ForAll(nfSust, ThisRecord.Name)
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.Sustainability, Patch(BriefLines, ThisItem, {Sustainability: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.2 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.52
+                  Y: =182
+            - brLISvc:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.ServiceDisc
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =["NO", "YES"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.ServiceDisc, Patch(BriefLines, ThisItem, {ServiceDisc: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.1 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.72
+                  Y: =182
+            - brLIPub:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.PublisherName
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  HintText: ="if deal type = Other"
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.PublisherName, Patch(BriefLines, ThisItem, {PublisherName: Self.Text}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.18 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.82
+                  Y: =182
+            - brLIName:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =nfBlue
+                  Font: =Font.'Segoe UI'
+                  Height: =30
+                  Size: =9
+                  Text: |-
+                    ="Line item name: " & Lower(Substitute(Coalesce(ThisItem.DealType, "X") & If(ThisItem.DealType = "Youtube", "-" & Coalesce(ThisItem.YTLIType, "X"), "") & "_" & Coalesce(LookUp(nfAuds, Name = ThisItem.AudTargeting).AudType, "X") & "-" & Coalesce(LookUp(nfAuds, Name = ThisItem.AudTargeting).Abv, "X") & "_" & Coalesce(ThisItem.AudTactic, "X") & "_" & Coalesce(ThisItem.Gender, "X") & "_" & Coalesce(Text(ThisItem.AgeMin), "X") & "-" & Coalesce(Text(ThisItem.AgeMax), "X") & "_" & Coalesce(LookUp(nfLangs, Name = ThisItem.Language).Abv, "X") & "_" & Coalesce(LookUp(nfDevices, Name = ThisItem.Device).Abv, "X") & "_" & Coalesce(ThisItem.Environment, "X") & "_" & Coalesce(ThisItem.Dims, "X") & "_" & Coalesce(LookUp(nfSust, Name = ThisItem.Sustainability).Abv, "X") & If(ThisItem.ServiceDisc = "YES", "_SERVICE", "") & "_" & Coalesce(ThisItem.PublisherName, "X"), " ", "-"))
+                  VerticalAlign: =VerticalAlign.Top
+                  Width: =(Parent.TemplateWidth - 124)
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =238
+            - brLIInfo:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(16, 20, 61, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =18
+                  Size: =9
+                  Text: |-
+                    =If(
+                        varIO.Channel = "YouTube",
+                        With({G: Filter(BriefAdGroups, BriefID = varBrief.BriefID && IONo = varIO.IONo && LineNo = ThisItem.LineNo)},
+                            CountRows(G) & " ad groups  ·  " & CountRows(Filter(BriefAds, BriefID = varBrief.BriefID && IONo = varIO.IONo && LineNo = ThisItem.LineNo)) & " ads" &
+                            If(CountRows(G) = 0, "  ·  ✗ add at least one ad group", "")),
+                        CountRows(Filter(BriefAds, BriefID = varBrief.BriefID && IONo = varIO.IONo && LineNo = ThisItem.LineNo)) & " creatives" &
+                            If(CountRows(Filter(BriefAds, BriefID = varBrief.BriefID && IONo = varIO.IONo && LineNo = ThisItem.LineNo)) = 0, "  ·  ✗ add at least one creative", "")
+                    ) & If(ThisItem.StartDate < varIO.StartDate || ThisItem.EndDate > varIO.EndDate, "  ·  ✗ dates outside the IO flight", "")
+                  Width: =(Parent.TemplateWidth - 124)
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =220
+            - brLIOpen:
+                Control: Classic/Icon@2.5.0
+                Properties:
+                  AccessibleLabel: ="Open"
+                  Color: =nfBlue
+                  Height: =40
+                  Icon: =Icon.ChevronRight
+                  OnSelect: =Set(varLI, ThisItem); Set(varAG, Blank()); Set(varLevel, If(varIO.Channel = "YouTube", "AG", "AD"))
+                  Width: =40
+                  X: =Parent.TemplateWidth - 44
+                  Y: =40
+            - brLIDel:
+                Control: Classic/Icon@2.5.0
+                Properties:
+                  AccessibleLabel: ="Delete line item"
+                  Color: =RGBA(196, 40, 40, 1)
+                  Height: =28
+                  Icon: =Icon.Trash
+                  OnSelect: |-
+                    =RemoveIf(BriefAds, BriefID = varBrief.BriefID && IONo = varIO.IONo && LineNo = ThisItem.LineNo);
+                    RemoveIf(BriefAdGroups, BriefID = varBrief.BriefID && IONo = varIO.IONo && LineNo = ThisItem.LineNo);
+                    Remove(BriefLines, ThisItem)
+                  Width: =28
+                  X: =Parent.TemplateWidth - 80
+                  Y: =46
+      - brAddAG:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =RGBA(16, 20, 61, 1)
+            Fill: =nfGreen
+            Font: =Font.'Segoe UI'
+            Height: =32
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: |-
+              =With({li: LookUp(BriefLines, BriefID = varBrief.BriefID && IONo = varIO.IONo && LineNo = varLI.LineNo)}, Patch(
+                  BriefAdGroups,
+                  Defaults(BriefAdGroups),
+                  {
+                      BriefID: varBrief.BriefID,
+                      IONo: varIO.IONo,
+                      LineNo: varLI.LineNo,
+                      AGNo: Coalesce(Max(Filter(BriefAdGroups, BriefID = varBrief.BriefID && IONo = varIO.IONo && LineNo = varLI.LineNo), AGNo), 0) + 1,
+                      AudTargeting: li.AudTargeting, AudTactic: li.AudTactic, Gender: li.Gender, AgeMin: li.AgeMin, AgeMax: li.AgeMax,
+                      Language: li.Language, VideoAdFormat: li.YTLIType
+                  }
+              ))
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =11
+            Text: ="+ Add ad group"
+            Visible: =varBriefTab = "Structure" && varLevel = "AG"
+            Width: =170
+            X: =12
+            Y: =156
+      - brAGInfoTop:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =32
+            Size: =10
+            Text: ="Line item " & varIO.IONo & "." & varLI.LineNo & " · " & varLI.Format & " · THB " & Text(Coalesce(varLI.Budget, 0), "#,##0")
+            Visible: =varBriefTab = "Structure" && varLevel = "AG"
+            Width: =Parent.Width - 396 - 192
+            X: =192
+            Y: =156
+      - brAGs:
+          Control: Gallery@2.15.0
+          Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
+          Properties:
+            Height: =Parent.Height - 204
+            Items: =Sort(Filter(BriefAdGroups, BriefID = varBrief.BriefID && IONo = varIO.IONo && LineNo = varLI.LineNo), AGNo)
+            TemplateSize: =156
+            Visible: =varBriefTab = "Structure" && varLevel = "AG"
+            Width: =Parent.Width - 396
+            X: =12
+            Y: =193
+          Children:
+            - brAGSep:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =RGBA(226, 229, 238, 1)
+                  Height: =1
+                  Width: =Parent.TemplateWidth
+                  Y: =Parent.TemplateHeight - 1
+            - brAGNo:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =nfBlue
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =28
+                  Size: =11
+                  Text: =varIO.IONo & "." & varLI.LineNo & "." & ThisItem.AGNo
+                  Width: =56
+                  X: =4
+                  Y: =22
+            - brAGc1:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="5 · Audience (affinity / in-market / 1P / custom)"
+                  Width: =(Parent.TemplateWidth - 124) * 0.45 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =4
+            - brAGc2:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Demographics (gender, age, parental)"
+                  Width: =(Parent.TemplateWidth - 124) * 0.2 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.45
+                  Y: =4
+            - brAGc3:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Notes"
+                  Width: =(Parent.TemplateWidth - 124) * 0.35 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.65
+                  Y: =4
+            - brAGAud:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Audience
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  HintText: |-
+                    ="e.g. In-market: Beauty & personal care; Custom: ..."
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.Audience, Patch(BriefAdGroups, ThisItem, {Audience: Self.Text}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.45 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =20
+            - brAGDemo:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Demographics
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  HintText: ="e.g. F 18-34"
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.Demographics, Patch(BriefAdGroups, ThisItem, {Demographics: Self.Text}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.2 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.45
+                  Y: =20
+            - brAGNotes:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Notes
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.Notes, Patch(BriefAdGroups, ThisItem, {Notes: Self.Text}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.35 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.65
+                  Y: =20
+            - brAGn1:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Audience targeting (naming)"
+                  Width: =(Parent.TemplateWidth - 124) * 0.26 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =58
+            - brAGn2:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Tactic"
+                  Width: =(Parent.TemplateWidth - 124) * 0.12 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.26
+                  Y: =58
+            - brAGn3:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Gender"
+                  Width: =(Parent.TemplateWidth - 124) * 0.09 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.38
+                  Y: =58
+            - brAGn4:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Age min"
+                  Width: =(Parent.TemplateWidth - 124) * 0.08 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.47
+                  Y: =58
+            - brAGn5:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Age max"
+                  Width: =(Parent.TemplateWidth - 124) * 0.08 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.55
+                  Y: =58
+            - brAGn6:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Language"
+                  Width: =(Parent.TemplateWidth - 124) * 0.12 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.63
+                  Y: =58
+            - brAGn7:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Video ad format"
+                  Width: =(Parent.TemplateWidth - 124) * 0.15 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.75
+                  Y: =58
+            - brAGn8:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Other"
+                  Width: =(Parent.TemplateWidth - 124) * 0.1 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.9
+                  Y: =58
+            - brAGAudT:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.AudTargeting
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =ForAll(nfAuds, ThisRecord.Name)
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.AudTargeting, Patch(BriefAdGroups, ThisItem, {AudTargeting: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.26 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =74
+            - brAGTac:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.AudTactic
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  HintText: ="e.g. int"
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.AudTactic, Patch(BriefAdGroups, ThisItem, {AudTactic: Self.Text}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.12 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.26
+                  Y: =74
+            - brAGGen:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Gender
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =["M-W", "W", "M"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.Gender, Patch(BriefAdGroups, ThisItem, {Gender: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.09 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.38
+                  Y: =74
+            - brAGAgeMin:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.AgeMin
+                  Font: =Font.'Segoe UI'
+                  Format: =TextFormat.Number
+                  Height: =32
+                  HintText: ="18"
+                  OnChange: |-
+                    =If(Value(Self.Text) <> ThisItem.AgeMin, Patch(BriefAdGroups, ThisItem, {AgeMin: Value(Self.Text)}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.08 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.47
+                  Y: =74
+            - brAGAgeMax:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.AgeMax
+                  Font: =Font.'Segoe UI'
+                  Format: =TextFormat.Number
+                  Height: =32
+                  HintText: ="44"
+                  OnChange: |-
+                    =If(Value(Self.Text) <> ThisItem.AgeMax, Patch(BriefAdGroups, ThisItem, {AgeMax: Value(Self.Text)}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.08 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.55
+                  Y: =74
+            - brAGLang:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Language
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =ForAll(nfLangs, ThisRecord.Name)
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.Language, Patch(BriefAdGroups, ThisItem, {Language: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.12 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.63
+                  Y: =74
+            - brAGVF:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.VideoAdFormat
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =["bumper", "dco", "demand gen", "director mix", "discovery", "display", "for-reach", "for-shopping", "in-feed", "in-stream skip", "in-stream non-skip", "masthead", "outstream", "video-action", "video-reach", "video-view", "vto-instream", "youtube-short"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.VideoAdFormat, Patch(BriefAdGroups, ThisItem, {VideoAdFormat: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.15 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.75
+                  Y: =74
+            - brAGOther:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.AGOther
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.AGOther, Patch(BriefAdGroups, ThisItem, {AGOther: Self.Text}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.1 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.9
+                  Y: =74
+            - brAGName:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =nfBlue
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =9
+                  Text: |-
+                    ="Ad group name: " & Lower(Substitute(Coalesce(LookUp(nfAuds, Name = ThisItem.AudTargeting).AudType, "X") & "-" & Coalesce(LookUp(nfAuds, Name = ThisItem.AudTargeting).Abv, "X") & "_" & Coalesce(ThisItem.AudTactic, "X") & "_" & Coalesce(ThisItem.Gender, "X") & "_" & Coalesce(Text(ThisItem.AgeMin), "X") & "-" & Coalesce(Text(ThisItem.AgeMax), "X") & "_" & Coalesce(LookUp(nfLangs, Name = ThisItem.Language).Abv, "X") & "_" & Coalesce(ThisItem.VideoAdFormat, "X") & If(IsBlank(ThisItem.AGOther), "", "_" & ThisItem.AGOther), " ", "-"))
+                  Width: =(Parent.TemplateWidth - 124)
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =130
+            - brAGInfo:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(16, 20, 61, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =18
+                  Size: =9
+                  Text: |-
+                    =With({n: CountRows(Filter(BriefAds, BriefID = varBrief.BriefID && IONo = varIO.IONo && LineNo = varLI.LineNo && AGNo = ThisItem.AGNo))},
+                        n & " ads" & If(n = 0, "  ·  ✗ add at least one ad", "") & If(IsBlank(ThisItem.Audience), "  ·  ✗ audience missing", ""))
+                  Width: =(Parent.TemplateWidth - 124)
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =112
+            - brAGOpen:
+                Control: Classic/Icon@2.5.0
+                Properties:
+                  AccessibleLabel: ="Open ads"
+                  Color: =nfBlue
+                  Height: =40
+                  Icon: =Icon.ChevronRight
+                  OnSelect: =Set(varAG, ThisItem); Set(varLevel, "AD")
+                  Width: =40
+                  X: =Parent.TemplateWidth - 44
+                  Y: =20
+            - brAGDel:
+                Control: Classic/Icon@2.5.0
+                Properties:
+                  AccessibleLabel: ="Delete ad group"
+                  Color: =RGBA(196, 40, 40, 1)
+                  Height: =28
+                  Icon: =Icon.Trash
+                  OnSelect: |-
+                    =RemoveIf(BriefAds, BriefID = varBrief.BriefID && IONo = varIO.IONo && LineNo = varLI.LineNo && AGNo = ThisItem.AGNo);
+                    Remove(BriefAdGroups, ThisItem)
+                  Width: =28
+                  X: =Parent.TemplateWidth - 80
+                  Y: =26
+      - brAddAD:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =RGBA(16, 20, 61, 1)
+            Fill: =nfGreen
+            Font: =Font.'Segoe UI'
+            Height: =32
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: |-
+              =Patch(
+                  BriefAds,
+                  Defaults(BriefAds),
+                  {
+                      BriefID: varBrief.BriefID,
+                      IONo: varIO.IONo,
+                      LineNo: varLI.LineNo,
+                      AGNo: If(varIO.Channel = "YouTube", varAG.AGNo, 0),
+                      AdNo: Coalesce(Max(Filter(BriefAds, BriefID = varBrief.BriefID && IONo = varIO.IONo && LineNo = varLI.LineNo && AGNo = If(varIO.Channel = "YouTube", varAG.AGNo, 0)), AdNo), 0) + 1,
+                      AdFormat: If(varIO.Channel = "YouTube", LookUp(BriefLines, BriefID = varBrief.BriefID && IONo = varIO.IONo && LineNo = varLI.LineNo).YTLIType, Blank()),
+                      Skippable: If(varLI.Format in ["Non-skip", "Bumper"], "unskip", varLI.Format in ["Display", "Native"], "display", "skip"),
+                      CTACode: "SHOP-NOW",
+                      AdBuyingType: "Programmatic",
+                      Rotation: "optimized",
+                      Redirect: "L'Oréal D2C"
+                  }
+              )
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =11
+            Text: =If(varIO.Channel = "YouTube", "+ Add ad", "+ Add creative")
+            Visible: =varBriefTab = "Structure" && varLevel = "AD"
+            Width: =170
+            X: =12
+            Y: =156
+      - brADInfoTop:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =32
+            Size: =10
+            Text: |-
+              =If(varIO.Channel = "YouTube", "Ad group " & varIO.IONo & "." & varLI.LineNo & "." & varAG.AGNo & " · " & varAG.Audience,
+                  "Line item " & varIO.IONo & "." & varLI.LineNo & " · " & varLI.Format & " · creatives")
+            Visible: =varBriefTab = "Structure" && varLevel = "AD"
+            Width: =Parent.Width - 396 - 192
+            X: =192
+            Y: =156
+      - brADs:
+          Control: Gallery@2.15.0
+          Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
+          Properties:
+            Height: =Parent.Height - 204
+            Items: =Sort(Filter(BriefAds, BriefID = varBrief.BriefID && IONo = varIO.IONo && LineNo = varLI.LineNo && AGNo = If(varIO.Channel = "YouTube", varAG.AGNo, 0)), AdNo)
+            TemplateSize: =246
+            Visible: =varBriefTab = "Structure" && varLevel = "AD"
+            Width: =Parent.Width - 396
+            X: =12
+            Y: =193
+          Children:
+            - brADSep:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =RGBA(226, 229, 238, 1)
+                  Height: =1
+                  Width: =Parent.TemplateWidth
+                  Y: =Parent.TemplateHeight - 1
+            - brADNo:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =nfBlue
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =28
+                  Size: =12
+                  Text: ="#" & ThisItem.AdNo
+                  Width: =52
+                  X: =6
+                  Y: =22
+            - brADc1:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Ad / creative name"
+                  Width: =(Parent.TemplateWidth - 124) * 0.22 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =4
+            - brADc2:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: =If(varIO.Channel = "YouTube", "YouTube video URL", "Creative file / asset link")
+                  Width: =(Parent.TemplateWidth - 124) * 0.3 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.22
+                  Y: =4
+            - brADc3:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: =If(varIO.Channel = "YouTube", "Length (sec)", "Size / format")
+                  Width: =(Parent.TemplateWidth - 124) * 0.12 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.52
+                  Y: =4
+            - brADc4:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="7 · Landing URL (https://)"
+                  Width: =(Parent.TemplateWidth - 124) * 0.36 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.64
+                  Y: =4
+            - brADName:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.AdName
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.AdName, Patch(BriefAds, ThisItem, {AdName: Self.Text}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.22 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =20
+            - brADAsset:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.AssetURL
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.AssetURL, Patch(BriefAds, ThisItem, {AssetURL: Self.Text}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.3 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.22
+                  Y: =20
+            - brADLen:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.VideoLength
+                  Font: =Font.'Segoe UI'
+                  Format: =TextFormat.Number
+                  Height: =32
+                  HintText: ="sec"
+                  OnChange: |-
+                    =If(Value(Self.Text) <> ThisItem.VideoLength, Patch(BriefAds, ThisItem, {VideoLength: Value(Self.Text)}))
+                  Size: =10
+                  Visible: =varIO.Channel = "YouTube"
+                  Width: =(Parent.TemplateWidth - 124) * 0.12 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.52
+                  Y: =20
+            - brADSize:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.CreativeSize
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  HintText: ="e.g. 300x250"
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.CreativeSize, Patch(BriefAds, ThisItem, {CreativeSize: Self.Text}))
+                  Size: =10
+                  Visible: =!(varIO.Channel = "YouTube")
+                  Width: =(Parent.TemplateWidth - 124) * 0.12 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.52
+                  Y: =20
+            - brADURL:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.LandingURL
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  HintText: ="https://"
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.LandingURL, Patch(BriefAds, ThisItem, {LandingURL: Self.Text}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.36 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.64
+                  Y: =20
+            - brADc5:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Display URL"
+                  Visible: =varIO.Channel = "YouTube"
+                  Width: =(Parent.TemplateWidth - 124) * 0.22 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =58
+            - brADc6:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="CTA (max 10)"
+                  Visible: =varIO.Channel = "YouTube"
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.22
+                  Y: =58
+            - brADc7:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Headline (max 15)"
+                  Visible: =varIO.Channel = "YouTube"
+                  Width: =(Parent.TemplateWidth - 124) * 0.28 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.36
+                  Y: =58
+            - brADc8:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Description"
+                  Visible: =varIO.Channel = "YouTube"
+                  Width: =(Parent.TemplateWidth - 124) * 0.36 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.64
+                  Y: =58
+            - brADDisp:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.DisplayURL
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.DisplayURL, Patch(BriefAds, ThisItem, {DisplayURL: Self.Text}))
+                  Size: =10
+                  Visible: =varIO.Channel = "YouTube"
+                  Width: =(Parent.TemplateWidth - 124) * 0.22 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =74
+            - brADCTA:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.CTA
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.CTA, Patch(BriefAds, ThisItem, {CTA: Self.Text}))
+                  Size: =10
+                  Visible: =varIO.Channel = "YouTube"
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.22
+                  Y: =74
+            - brADHead:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Headline
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.Headline, Patch(BriefAds, ThisItem, {Headline: Self.Text}))
+                  Size: =10
+                  Visible: =varIO.Channel = "YouTube"
+                  Width: =(Parent.TemplateWidth - 124) * 0.28 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.36
+                  Y: =74
+            - brADDesc:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Description
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.Description, Patch(BriefAds, ThisItem, {Description: Self.Text}))
+                  Size: =10
+                  Visible: =varIO.Channel = "YouTube"
+                  Width: =(Parent.TemplateWidth - 124) * 0.36 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.64
+                  Y: =74
+            - brADc9:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Notes / 3P tag"
+                  Visible: =!(varIO.Channel = "YouTube")
+                  Width: =(Parent.TemplateWidth - 124) * 1 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =58
+            - brADNote:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Description
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  HintText: ="e.g. CM360 tag, click tracker"
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.Description, Patch(BriefAds, ThisItem, {Description: Self.Text}))
+                  Size: =10
+                  Visible: =!(varIO.Channel = "YouTube")
+                  Width: =(Parent.TemplateWidth - 124) * 1 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =74
+            - brADn1:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Asset description (naming)"
+                  Width: =(Parent.TemplateWidth - 124) * 0.2 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =112
+            - brADn2:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Asset source"
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.2
+                  Y: =112
+            - brADn3:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Format (naming)"
+                  Width: =(Parent.TemplateWidth - 124) * 0.16 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.34
+                  Y: =112
+            - brADn4:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="CTA (naming)"
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.5
+                  Y: =112
+            - brADn5:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Skippable"
+                  Width: =(Parent.TemplateWidth - 124) * 0.1 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.64
+                  Y: =112
+            - brADn6:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Buying type"
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.74
+                  Y: =112
+            - brADn7:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Rotation"
+                  Width: =(Parent.TemplateWidth - 124) * 0.12 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.88
+                  Y: =112
+            - brADDescN:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.AssetDesc
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  HintText: ="e.g. brand-phuwin6s-16x9"
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.AssetDesc, Patch(BriefAds, ThisItem, {AssetDesc: Self.Text}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.2 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =128
+            - brADSrc:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.AssetSource
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =["", "DMI", "DMIedit", "Local", "Influencer-Creator", "Consumer"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.AssetSource, Patch(BriefAds, ThisItem, {AssetSource: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.2
+                  Y: =128
+            - brADFmt:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.AdFormat
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =If(varIO.Channel = "YouTube", ["bumper", "dco", "demand gen", "director mix", "discovery", "display", "for-reach", "for-shopping", "in-feed", "in-stream skip", "in-stream non-skip", "masthead", "outstream", "video-action", "video-reach", "video-view", "vto-instream", "youtube-short", "VideoLandScape", "VideoSquare", "VideoPortrait"], Switch(varIO.IOType, "Video", ["VideoLandScape", "VideoSquare", "VideoPortrait"], "Audio", ["Audio"], "TrueView", ["bumper", "dco", "demand gen", "director mix", "discovery", "display", "for-reach", "for-shopping", "in-feed", "in-stream skip", "in-stream non-skip", "masthead", "outstream", "video-action", "video-reach", "video-view", "vto-instream", "youtube-short"], ["300x250", "728x90", "160x600", "300x600", "970x250", "320x50", "320x100", "320x480", "336x280", "970x90", "nativead", "interstitial", "takeover", "masthead", "richmedia"]))
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.AdFormat, Patch(BriefAds, ThisItem, {AdFormat: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.16 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.34
+                  Y: =128
+            - brADCTAc:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.CTACode
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =["", "ADD-TO-CART", "BOOK-NOW", "BUY", "BUY-NOW", "CALL", "CALL-ME", "CONTACT-US", "CONTEST", "COUPON", "DISCOVER-NOW", "DONATE", "DONATE-NOW", "DOWNLOAD", "EVENT-RSVP", "GET-DIRECTIONS", "GET-OFFER", "INSTALL-APP", "KNOW-MORE", "LEARN-MORE", "LIKE-PAGE", "NO-BUTTON", "OPEN-LINK", "ORDER-NOW", "OTHER", "PLAY-GAME", "PRODUCT-TEST", "RATINGS-REVIEW", "SAMPLE-REQUEST", "SHARE", "SHOP-NOW", "SIGN-UP", "SUBSCRIBE", "UPDATE-APP", "WATCH-MORE", "WATCH-VIDEO"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.CTACode, Patch(BriefAds, ThisItem, {CTACode: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.5
+                  Y: =128
+            - brADSkip:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Skippable
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =["skip", "unskip", "multi", "display"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.Skippable, Patch(BriefAds, ThisItem, {Skippable: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.1 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.64
+                  Y: =128
+            - brADBuy:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.AdBuyingType
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =["DirectBuying", "Programmatic", "ProgrammaticDeal", "Other"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.AdBuyingType, Patch(BriefAds, ThisItem, {AdBuyingType: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.74
+                  Y: =128
+            - brADRot:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Rotation
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =["no", "sequential", "even", "custom", "optimized"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.Rotation, Patch(BriefAds, ThisItem, {Rotation: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.12 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.88
+                  Y: =128
+            - brADn8:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Redirection to"
+                  Width: =(Parent.TemplateWidth - 124) * 0.2 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =166
+            - brADn9:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="E-retailer / other name"
+                  Width: =(Parent.TemplateWidth - 124) * 0.2 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.2
+                  Y: =166
+            - brADn10:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Other (opt.)"
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.4
+                  Y: =166
+            - brADn11:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =16
+                  Size: =9
+                  Text: ="Ad name (from the naming convention)"
+                  Width: =(Parent.TemplateWidth - 124) * 0.46 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.54
+                  Y: =166
+            - brADRed:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  AllowEmptySelection: =true
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Redirect
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Items: =["L'Oréal D2C", "L'Oréal non-D2C", "E-retailers", "Others", "None"]
+                  Items.Value: =Value
+                  OnChange: |-
+                    =If(Self.Selected.Value <> ThisItem.Redirect, Patch(BriefAds, ThisItem, {Redirect: Self.Selected.Value}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.2 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =182
+            - brADRet:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.Retailer
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  HintText: ="e.g. shopee"
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.Retailer, Patch(BriefAds, ThisItem, {Retailer: Self.Text}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.2 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.2
+                  Y: =182
+            - brADOther:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: =RGBA(203, 208, 222, 1)
+                  Default: =ThisItem.AdOther
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  OnChange: |-
+                    =If(Self.Text <> ThisItem.AdOther, Patch(BriefAds, ThisItem, {AdOther: Self.Text}))
+                  Size: =10
+                  Width: =(Parent.TemplateWidth - 124) * 0.14 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.4
+                  Y: =182
+            - brADNameN:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =nfBlue
+                  Font: =Font.'Segoe UI'
+                  Height: =34
+                  Size: =9
+                  Text: =Lower(Substitute(Coalesce(ThisItem.AssetDesc, "X") & "_" & Coalesce(ThisItem.AssetSource, "X") & "_" & Coalesce(ThisItem.AdFormat, "X") & "_" & If(ThisItem.VideoLength > 0, Text(ThisItem.VideoLength), "X") & "_" & Coalesce(ThisItem.CTACode, "X") & "_" & Coalesce(ThisItem.Skippable, "X") & "_" & Coalesce(ThisItem.AdBuyingType, "X") & "_" & Coalesce(ThisItem.Rotation, "X") & "_" & Switch(ThisItem.Redirect, "E-retailers", "e-" & ThisItem.Retailer, "Others", Coalesce(ThisItem.Retailer, "other"), "L'Oréal D2C", "d2c", "L'Oréal non-D2C", "non-d2c", "None", "noredirect", "X") & If(IsBlank(ThisItem.AdOther), "", "_" & ThisItem.AdOther), " ", "-"))
+                  VerticalAlign: =VerticalAlign.Top
+                  Width: =(Parent.TemplateWidth - 124) * 0.46 - 6
+                  X: =60 + (Parent.TemplateWidth - 124) * 0.54
+                  Y: =182
+            - brADInfo:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(196, 40, 40, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =18
+                  Size: =9
+                  Text: |-
+                    =If(!StartsWith(ThisItem.LandingURL, "https://"), "✗ landing URL must start with https://  ", "") &
+                    If(varIO.Channel = "YouTube" && IsBlank(ThisItem.AssetURL), "✗ YouTube URL missing  ", "") &
+                    If(varIO.Channel = "YouTube" && varLI.Format = "Bumper" && ThisItem.VideoLength > 6, "✗ bumper max 6 sec  ", "") &
+                    If(varIO.Channel = "YouTube" && varLI.Format = "Non-skip" && ThisItem.VideoLength > 15, "✗ non-skip max 15 sec  ", "") &
+                    If(varIO.Channel = "YouTube" && Len(ThisItem.CTA) > 10, "✗ CTA over 10 characters  ", "") &
+                    If(varIO.Channel = "YouTube" && Len(ThisItem.Headline) > 15, "✗ headline over 15 characters", "")
+                  Width: =(Parent.TemplateWidth - 124)
+                  X: =60 + (Parent.TemplateWidth - 124) * 0
+                  Y: =220
+            - brADDel:
+                Control: Classic/Icon@2.5.0
+                Properties:
+                  AccessibleLabel: ="Delete"
+                  Color: =RGBA(196, 40, 40, 1)
+                  Height: =28
+                  Icon: =Icon.Trash
+                  OnSelect: =Remove(BriefAds, ThisItem)
+                  Width: =28
+                  X: =Parent.TemplateWidth - 44
+                  Y: =46
+      - brPanel:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =RGBA(241, 243, 248, 1)
+            Height: =Parent.Height - 64
+            Width: =372
+            X: =Parent.Width - 372
+            Y: =64
+      - brPanelTitle:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =30
+            Size: =14
+            Text: ="Brief Gate checks"
+            Width: =330
+            X: =Parent.Width - 352
+            Y: =76
+      - brLeadVal:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            Height: =10
+            Size: =11
+            Text: |-
+              =With(
+                  {d: DateDiff(Today(), If(varBrief.BriefType in ["Extension", "Update"] && !IsBlank(varBrief.EffectiveDate), varBrief.EffectiveDate, varBrief.LaunchDate), TimeUnit.Days)},
+                  If(
+                      IsBlank(varBrief.LaunchDate) || d <= 0,
+                      0,
+                      Max(
+                          0,
+                          CountRows(
+                              Filter(
+                                  ForAll(Sequence(d, 0) As s, DateAdd(Today(), s.Value, TimeUnit.Days)) As x,
+                                  Weekday(x.Value, StartOfWeek.Monday) < 6 && !(Text(x.Value, "yyyy-mm-dd") in colHolidays.HDay)
+                              )
+                          ) - If(Hour(Now()) >= nfCutOffHour && Weekday(Today(), StartOfWeek.Monday) < 6 && !(Text(Today(), "yyyy-mm-dd") in colHolidays.HDay), 1, 0)
+                      )
+                  )
+              )
+            Visible: =false
+            Width: =10
+            X: =Parent.Width - 352
+            Y: =76
+      - brLead:
+          Control: Label@2.5.1
+          Properties:
+            Color: =If(Value(brLeadVal.Text) >= nfMinLeadDays || (varBrief.IsException = "Yes" && !IsBlank(varBrief.ExceptionApprover)), RGBA(21, 128, 61, 1), RGBA(196, 40, 40, 1))
+            Font: =Font.'Segoe UI'
+            Height: =44
+            Size: =10
+            Text: |-
+              ="Lead time: " & brLeadVal.Text & " working days" &
+              If(
+                  Value(brLeadVal.Text) < nfMinLeadDays,
+                  If(varBrief.IsException = "Yes" && !IsBlank(varBrief.ExceptionApprover), "  ·  exception approved", "  ·  under " & nfMinLeadDays & ": needs an approved exception"),
+                  ""
+              )
+            Width: =330
+            X: =Parent.Width - 352
+            Y: =108
+      - brChecks:
+          Control: Gallery@2.15.0
+          Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
+          Properties:
+            Height: =Parent.Height - 156 - 108
+            Items: |-
+              =With(
+                  {
+                      b: varBrief,
+                      I: Filter(BriefIOs, BriefID = varBrief.BriefID),
+                      L: Filter(BriefLines, BriefID = varBrief.BriefID),
+                      G: Filter(BriefAdGroups, BriefID = varBrief.BriefID),
+                      A: Filter(BriefAds, BriefID = varBrief.BriefID)
+                  },
+                  Table(
+                      {No: 0, Item: "Structure", Rule: "Required", Ok: CountRows(I) > 0 && CountRows(Filter(I As io, CountRows(Filter(L, IONo = io.IONo)) = 0)) = 0 && CountRows(Filter(L As li, With({ch: LookUp(I, IONo = li.IONo).Channel}, If(ch = "YouTube", !(li.Format in ["VRC", "VVC", "Non-skip", "Bumper", "Shorts"]), li.Format in ["VRC", "VVC", "Non-skip", "Bumper", "Shorts"])))) = 0, Gap: "At least one IO, a line item in every IO, and line formats that match the IO channel"},
+                      {No: 1, Item: "PO", Rule: "Required", Ok: !IsBlank(b.PONumber) && !IsBlank(b.POLink) && b.POAmount > 0 && Round(b.POAmount, 2) >= Round(b.TotalBudget, 2), Gap: "PO number, PO file link, and a PO amount that covers the total budget"},
+                      {No: 2, Item: "Budget & split", Rule: "Required", Ok: b.TotalBudget > 0 && CountRows(I) > 0 && Round(Sum(I, Budget), 2) = Round(b.TotalBudget, 2) && CountRows(Filter(I, !(Budget > 0))) = 0 && CountRows(Filter(L, !(Budget > 0))) = 0 && CountRows(Filter(I As io, Round(Sum(Filter(L, IONo = io.IONo), Budget), 2) <> Round(io.Budget, 2))) = 0, Gap: "IO budgets must add up to the campaign budget, and line budgets to each IO budget"},
+                      {No: 3, Item: "Flight", Rule: "Required", Ok: !IsBlank(b.LaunchDate) && !IsBlank(b.EndDate) && b.EndDate >= b.LaunchDate && CountRows(Filter(I, IsBlank(StartDate) || IsBlank(EndDate) || EndDate < StartDate || StartDate < b.LaunchDate || EndDate > b.EndDate)) = 0 && CountRows(Filter(L As li, With({p: LookUp(I, IONo = li.IONo)}, IsBlank(li.StartDate) || IsBlank(li.EndDate) || li.EndDate < li.StartDate || li.StartDate < p.StartDate || li.EndDate > p.EndDate))) = 0 && CountRows(Filter(I, !IsBlank(SegmentStart) && (SegmentStart < StartDate || SegmentEnd > EndDate || SegmentEnd < SegmentStart))) = 0 && (b.BriefType = "New" || IsBlank(b.BriefType) || !IsBlank(b.EffectiveDate)), Gap: "Campaign dates; IOs inside the campaign, lines inside their IO, budget segment inside its IO; extensions need an effective date"},
+                      {No: 4, Item: "Objective & KPI", Rule: "Required", Ok: !IsBlank(b.Objective) && !IsBlank(b.KPIModel) && b.KPITarget > 0 && CountRows(Filter(I, IsBlank(KPIModel) || !(KPITarget > 0))) = 0, Gap: "Campaign objective and KPI, and a KPI model and target on every IO"},
+                      {No: 5, Item: "Audience", Rule: "Required", Ok: CountRows(L) > 0 && CountRows(Filter(L As li, If(LookUp(I, IONo = li.IONo).Channel = "YouTube", CountRows(Filter(G, IONo = li.IONo && LineNo = li.LineNo)) = 0, IsBlank(li.Audience)))) = 0 && CountRows(Filter(G, IsBlank(Audience))) = 0, Gap: "YouTube: ad groups with an audience in every line item. Others: targeting on every line"},
+                      {No: 6, Item: "Buying type / deal ID", Rule: "Required", Ok: CountRows(I) > 0 && CountRows(Filter(I, IsBlank(BuyingType) || (BuyingType in ["PG", "PMP"] && IsBlank(DealID)))) = 0, Gap: "Buying type on every IO, and a deal ID for PG or PMP"},
+                      {No: 7, Item: "Creative", Rule: "Required", Ok: CountRows(A) > 0 && CountRows(Filter(G As g, CountRows(Filter(A, IONo = g.IONo && LineNo = g.LineNo && AGNo = g.AGNo)) = 0)) = 0 && CountRows(Filter(L As li, LookUp(I, IONo = li.IONo).Channel <> "YouTube" && CountRows(Filter(A, IONo = li.IONo && LineNo = li.LineNo)) = 0)) = 0 && CountRows(Filter(A As a, !StartsWith(a.LandingURL, "https://") || With({f: LookUp(L, IONo = a.IONo && LineNo = a.LineNo).Format}, (f = "Bumper" && a.VideoLength > 6) || (f = "Non-skip" && a.VideoLength > 15)))) = 0 && CountRows(Filter(A As a, a.Action <> "Pause" && IsBlank(a.AssetURL))) = 0, Gap: "Ad per ad group, creative per non-YouTube line, video / creative link on every live ad, https:// URLs, length fits format"},
+                      {No: 8, Item: "Tracking", Rule: "Required", Ok: !IsBlank(b.Tracking), Gap: "Floodlight / pixel / UTM / 3P tag"},
+                      {No: 9, Item: "Test design", Rule: "If a test", Ok: b.IsTest <> "Yes" || !IsBlank(b.TestDesign), Gap: "Test / control, variable and duration"},
+                      {No: 10, Item: "Handover", Rule: "If needed", Ok: b.HandoverNeeded <> "Yes" || !IsBlank(b.HandoverNotes), Gap: "Handover notes"},
+                      {No: 11, Item: "Brand safety", Rule: "Default if blank", Ok: true, Gap: ""},
+                      {No: 12, Item: "Reporting & brand lift", Rule: "If BLS", Ok: b.BrandLift <> "Yes" || !IsBlank(b.BLSNotes), Gap: "Brand lift is on: add the BLS budget, dates and questions"},
+                      {No: 13, Item: "DV360 actions & IDs", Rule: "Ad Ops", Ok: b.Status in ["Draft", "Returned"] || (!(b.BriefType in ["Extension", "Update"]) || !IsBlank(b.DV360CampaignId)) && CountRows(Filter(I, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) + CountRows(Filter(L, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) + CountRows(Filter(G, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) + CountRows(Filter(A, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) = 0, Gap: "Ad Ops: an action on every IO, line, ad group and ad, and the DV360 ID for anything that already exists"}
+                  )
+              )
+            TemplateSize: =58
+            Width: =348
+            X: =Parent.Width - 360
+            Y: =156
+          Children:
+            - brChkMark:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Center
+                  Color: =If(ThisItem.Ok, RGBA(21, 128, 61, 1), RGBA(196, 40, 40, 1))
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =24
+                  Text: =If(ThisItem.Ok, "✓", "✗")
+                  Width: =28
+                  Y: =2
+            - brChkItem:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(16, 20, 61, 1)
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =20
+                  Size: =10
+                  Text: =If(ThisItem.No = 0, "", ThisItem.No & " · ") & ThisItem.Item
+                  Width: =Parent.TemplateWidth - 32 - 104
+                  Wrap: =false
+                  X: =32
+                  Y: =4
+            - brChkRule:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =9
+                  Text: =ThisItem.Rule
+                  Width: =96
+                  Wrap: =false
+                  X: =Parent.TemplateWidth - 104
+                  Y: =4
+            - brChkGap:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(196, 40, 40, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =32
+                  Size: =9
+                  Text: =If(ThisItem.Ok, "", ThisItem.Gap)
+                  VerticalAlign: =VerticalAlign.Top
+                  Visible: =!ThisItem.Ok
+                  Width: =Parent.TemplateWidth - 44
+                  X: =32
+                  Y: =24
+            - brChkSep:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =RGBA(226, 229, 238, 1)
+                  Height: =1
+                  Width: =Parent.TemplateWidth
+                  Y: =Parent.TemplateHeight - 1
+      - brSubmit:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =Color.White
+            DisplayMode: =If(varBrief.Status in ["Draft", "Returned"], DisplayMode.Edit, DisplayMode.Disabled)
+            Fill: =nfBlue
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =44
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: '=Navigate(scrReview, ScreenTransition.None)   '
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =11
+            Text: ="Review & submit  →"
+            Width: =330
+            X: =Parent.Width - 352
+            Y: =Parent.Height - 64
+      - brSubmitHint:
+          Control: Label@2.5.1
+          Properties:
+            Color: =If(varTestMode, RGBA(196, 40, 40, 1), RGBA(122, 128, 155, 1))
+            Font: =Font.'Segoe UI'
+            Height: =24
+            Size: =9
+            Text: |-
+              =If(varTestMode, "Test mode: Submit skips the checks and lead time.", "Review the whole brief, then submit to Ad Ops.")
+            Width: =200
+            X: =Parent.Width - 352
+            Y: =Parent.Height - 96
+      - brTestMode:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =If(varTestMode, Color.White, nfNavy)
+            Fill: =If(varTestMode, RGBA(196, 40, 40, 1), RGBA(241, 243, 248, 1))
+            Font: =Font.'Segoe UI'
+            Height: =26
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: =Set(varTestMode, !varTestMode)
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =9
+            Text: |-
+              =If(varTestMode, "Test mode: ON", "Test mode: OFF")
+            Visible: =nfRole = "Admin"
+            Width: =124
+            X: =Parent.Width - 146
+            Y: =Parent.Height - 98

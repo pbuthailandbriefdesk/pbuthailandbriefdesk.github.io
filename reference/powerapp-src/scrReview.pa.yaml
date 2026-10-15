@@ -1,0 +1,1220 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrReview:
+    Properties:
+      Fill: =RGBA(247, 248, 251, 1)
+      Height: =Max(App.Height, 560)
+      OnVisible: |-
+        =Set(varBrief, LookUp(Briefs, ID = varBrief.ID)); Set(varConfirmRecall, false); Set(varSdfOpen, false); ClearCollect(colOpen, ForAll(Filter(BriefIOs, BriefID = varBrief.BriefID) As i, {K: "IO" & i.IONo}))
+      Width: =Max(App.Width, 1024)
+    Children:
+      - rvHeader:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =Color.White
+            Height: =64
+            Width: =Parent.Width
+      - rvHeaderLine:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =nfGreen
+            Height: =3
+            Width: =Parent.Width
+            Y: =61
+      - rvHeaderMark:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =nfNavy
+            Height: =61
+            Width: =4
+      - rvTitle:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Size: =17
+            Text: =If(varBrief.Status in ["Draft", "Returned"], "Review & submit", "Brief summary")
+            Width: =Parent.Width - 460
+            X: =If(true, 64, 24)
+            Y: =12
+      - rvUser:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            Color: =RGBA(122, 128, 155, 1)
+            Font: =Font.'Segoe UI'
+            Height: =24
+            Size: =10
+            Text: =User().FullName & "  ·  " & nfRole
+            Width: =320
+            X: =Parent.Width - 344
+            Y: =20
+      - rvBack:
+          Control: Classic/Icon@2.5.0
+          Properties:
+            AccessibleLabel: ="Back"
+            Color: =RGBA(16, 20, 61, 1)
+            Height: =32
+            Icon: =Icon.ChevronLeft
+            OnSelect: =Back()
+            Width: =32
+            X: =16
+            Y: =16
+      - rvSub:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(74, 80, 112, 1)
+            Font: =Font.'Segoe UI'
+            Height: =24
+            Size: =11
+            Text: =varBrief.Brand & "  ·  " & Coalesce(varBrief.CampaignName, "(no campaign name)") & "  ·  " & varBrief.BriefID & "  ·  " & Coalesce(varBrief.BriefType, "New") & " brief  ·  ● " & varBrief.Status & If(Coalesce(varBrief.Resubmits, 0) > 0, "  ·  resubmitted " & varBrief.Resubmits & "×", "")
+            Width: =Parent.Width - 48
+            Wrap: =false
+            X: =24
+            Y: =76
+      - rvLeadVal:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            Height: =10
+            Size: =11
+            Text: |-
+              =With(
+                  {d: DateDiff(Today(), If(varBrief.BriefType in ["Extension", "Update"] && !IsBlank(varBrief.EffectiveDate), varBrief.EffectiveDate, varBrief.LaunchDate), TimeUnit.Days)},
+                  If(
+                      IsBlank(varBrief.LaunchDate) || d <= 0,
+                      0,
+                      Max(
+                          0,
+                          CountRows(
+                              Filter(
+                                  ForAll(Sequence(d, 0) As s, DateAdd(Today(), s.Value, TimeUnit.Days)) As x,
+                                  Weekday(x.Value, StartOfWeek.Monday) < 6 && !(Text(x.Value, "yyyy-mm-dd") in colHolidays.HDay)
+                              )
+                          ) - If(Hour(Now()) >= nfCutOffHour && Weekday(Today(), StartOfWeek.Monday) < 6 && !(Text(Today(), "yyyy-mm-dd") in colHolidays.HDay), 1, 0)
+                      )
+                  )
+              )
+            Visible: =false
+            Width: =10
+      - rvOpen:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            Height: =10
+            Size: =11
+            Text: |-
+              =Text(CountRows(Filter(With(
+                  {
+                      b: varBrief,
+                      I: Filter(BriefIOs, BriefID = varBrief.BriefID),
+                      L: Filter(BriefLines, BriefID = varBrief.BriefID),
+                      G: Filter(BriefAdGroups, BriefID = varBrief.BriefID),
+                      A: Filter(BriefAds, BriefID = varBrief.BriefID)
+                  },
+                  Table(
+                      {No: 0, Item: "Structure", Rule: "Required", Ok: CountRows(I) > 0 && CountRows(Filter(I As io, CountRows(Filter(L, IONo = io.IONo)) = 0)) = 0 && CountRows(Filter(L As li, With({ch: LookUp(I, IONo = li.IONo).Channel}, If(ch = "YouTube", !(li.Format in ["VRC", "VVC", "Non-skip", "Bumper", "Shorts"]), li.Format in ["VRC", "VVC", "Non-skip", "Bumper", "Shorts"])))) = 0, Gap: "At least one IO, a line item in every IO, and line formats that match the IO channel"},
+                      {No: 1, Item: "PO", Rule: "Required", Ok: !IsBlank(b.PONumber) && !IsBlank(b.POLink) && b.POAmount > 0 && Round(b.POAmount, 2) >= Round(b.TotalBudget, 2), Gap: "PO number, PO file link, and a PO amount that covers the total budget"},
+                      {No: 2, Item: "Budget & split", Rule: "Required", Ok: b.TotalBudget > 0 && CountRows(I) > 0 && Round(Sum(I, Budget), 2) = Round(b.TotalBudget, 2) && CountRows(Filter(I, !(Budget > 0))) = 0 && CountRows(Filter(L, !(Budget > 0))) = 0 && CountRows(Filter(I As io, Round(Sum(Filter(L, IONo = io.IONo), Budget), 2) <> Round(io.Budget, 2))) = 0, Gap: "IO budgets must add up to the campaign budget, and line budgets to each IO budget"},
+                      {No: 3, Item: "Flight", Rule: "Required", Ok: !IsBlank(b.LaunchDate) && !IsBlank(b.EndDate) && b.EndDate >= b.LaunchDate && CountRows(Filter(I, IsBlank(StartDate) || IsBlank(EndDate) || EndDate < StartDate || StartDate < b.LaunchDate || EndDate > b.EndDate)) = 0 && CountRows(Filter(L As li, With({p: LookUp(I, IONo = li.IONo)}, IsBlank(li.StartDate) || IsBlank(li.EndDate) || li.EndDate < li.StartDate || li.StartDate < p.StartDate || li.EndDate > p.EndDate))) = 0 && CountRows(Filter(I, !IsBlank(SegmentStart) && (SegmentStart < StartDate || SegmentEnd > EndDate || SegmentEnd < SegmentStart))) = 0 && (b.BriefType = "New" || IsBlank(b.BriefType) || !IsBlank(b.EffectiveDate)), Gap: "Campaign dates; IOs inside the campaign, lines inside their IO, budget segment inside its IO; extensions need an effective date"},
+                      {No: 4, Item: "Objective & KPI", Rule: "Required", Ok: !IsBlank(b.Objective) && !IsBlank(b.KPIModel) && b.KPITarget > 0 && CountRows(Filter(I, IsBlank(KPIModel) || !(KPITarget > 0))) = 0, Gap: "Campaign objective and KPI, and a KPI model and target on every IO"},
+                      {No: 5, Item: "Audience", Rule: "Required", Ok: CountRows(L) > 0 && CountRows(Filter(L As li, If(LookUp(I, IONo = li.IONo).Channel = "YouTube", CountRows(Filter(G, IONo = li.IONo && LineNo = li.LineNo)) = 0, IsBlank(li.Audience)))) = 0 && CountRows(Filter(G, IsBlank(Audience))) = 0, Gap: "YouTube: ad groups with an audience in every line item. Others: targeting on every line"},
+                      {No: 6, Item: "Buying type / deal ID", Rule: "Required", Ok: CountRows(I) > 0 && CountRows(Filter(I, IsBlank(BuyingType) || (BuyingType in ["PG", "PMP"] && IsBlank(DealID)))) = 0, Gap: "Buying type on every IO, and a deal ID for PG or PMP"},
+                      {No: 7, Item: "Creative", Rule: "Required", Ok: CountRows(A) > 0 && CountRows(Filter(G As g, CountRows(Filter(A, IONo = g.IONo && LineNo = g.LineNo && AGNo = g.AGNo)) = 0)) = 0 && CountRows(Filter(L As li, LookUp(I, IONo = li.IONo).Channel <> "YouTube" && CountRows(Filter(A, IONo = li.IONo && LineNo = li.LineNo)) = 0)) = 0 && CountRows(Filter(A As a, !StartsWith(a.LandingURL, "https://") || With({f: LookUp(L, IONo = a.IONo && LineNo = a.LineNo).Format}, (f = "Bumper" && a.VideoLength > 6) || (f = "Non-skip" && a.VideoLength > 15)))) = 0 && CountRows(Filter(A As a, a.Action <> "Pause" && IsBlank(a.AssetURL))) = 0, Gap: "Ad per ad group, creative per non-YouTube line, video / creative link on every live ad, https:// URLs, length fits format"},
+                      {No: 8, Item: "Tracking", Rule: "Required", Ok: !IsBlank(b.Tracking), Gap: "Floodlight / pixel / UTM / 3P tag"},
+                      {No: 9, Item: "Test design", Rule: "If a test", Ok: b.IsTest <> "Yes" || !IsBlank(b.TestDesign), Gap: "Test / control, variable and duration"},
+                      {No: 10, Item: "Handover", Rule: "If needed", Ok: b.HandoverNeeded <> "Yes" || !IsBlank(b.HandoverNotes), Gap: "Handover notes"},
+                      {No: 11, Item: "Brand safety", Rule: "Default if blank", Ok: true, Gap: ""},
+                      {No: 12, Item: "Reporting & brand lift", Rule: "If BLS", Ok: b.BrandLift <> "Yes" || !IsBlank(b.BLSNotes), Gap: "Brand lift is on: add the BLS budget, dates and questions"},
+                      {No: 13, Item: "DV360 actions & IDs", Rule: "Ad Ops", Ok: b.Status in ["Draft", "Returned"] || (!(b.BriefType in ["Extension", "Update"]) || !IsBlank(b.DV360CampaignId)) && CountRows(Filter(I, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) + CountRows(Filter(L, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) + CountRows(Filter(G, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) + CountRows(Filter(A, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) = 0, Gap: "Ad Ops: an action on every IO, line, ad group and ad, and the DV360 ID for anything that already exists"}
+                  )
+              ), !Ok)))
+            Visible: =false
+            Width: =10
+      - rvTile0:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(226, 229, 238, 1)
+            BorderThickness: =1
+            Color: =Color.White
+            DisabledBorderColor: =RGBA(226, 229, 238, 1)
+            DisabledFill: =Color.White
+            DisplayMode: =DisplayMode.Disabled
+            Fill: =Color.White
+            Font: =Font.'Segoe UI'
+            Height: =88
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            Size: =11
+            Text: =""
+            Width: =(Parent.Width - 48 - 64) / 5
+            X: =24 + 0 * ((Parent.Width - 48 - 64) / 5 + 16)
+            Y: =112
+      - rvTileC0:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(122, 128, 155, 1)
+            Font: =Font.'Segoe UI'
+            Height: =18
+            Size: =10
+            Text: ="Total budget (incl. fee)"
+            Width: =(Parent.Width - 48 - 64) / 5 - 32
+            X: =24 + 0 * ((Parent.Width - 48 - 64) / 5 + 16) + 16
+            Y: =122
+      - rvTileV0:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =32
+            Size: =19
+            Text: ="THB " & Text(Coalesce(varBrief.TotalBudget, 0), "#,##0")
+            Width: =(Parent.Width - 48 - 64) / 5 - 32
+            Wrap: =false
+            X: =24 + 0 * ((Parent.Width - 48 - 64) / 5 + 16) + 16
+            Y: =140
+      - rvTileN0:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(122, 128, 155, 1)
+            Font: =Font.'Segoe UI'
+            Height: =20
+            Size: =9
+            Text: ="PO " & Coalesce(varBrief.PONumber, "–") & "  ·  THB " & Text(Coalesce(varBrief.POAmount, 0), "#,##0")
+            Width: =(Parent.Width - 48 - 64) / 5 - 32
+            Wrap: =false
+            X: =24 + 0 * ((Parent.Width - 48 - 64) / 5 + 16) + 16
+            Y: =172
+      - rvTile1:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(226, 229, 238, 1)
+            BorderThickness: =1
+            Color: =Color.White
+            DisabledBorderColor: =RGBA(226, 229, 238, 1)
+            DisabledFill: =Color.White
+            DisplayMode: =DisplayMode.Disabled
+            Fill: =Color.White
+            Font: =Font.'Segoe UI'
+            Height: =88
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            Size: =11
+            Text: =""
+            Width: =(Parent.Width - 48 - 64) / 5
+            X: =24 + 1 * ((Parent.Width - 48 - 64) / 5 + 16)
+            Y: =112
+      - rvTileC1:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(122, 128, 155, 1)
+            Font: =Font.'Segoe UI'
+            Height: =18
+            Size: =10
+            Text: ="Insertion orders"
+            Width: =(Parent.Width - 48 - 64) / 5 - 32
+            X: =24 + 1 * ((Parent.Width - 48 - 64) / 5 + 16) + 16
+            Y: =122
+      - rvTileV1:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =32
+            Size: =19
+            Text: =CountRows(Filter(BriefIOs, BriefID = varBrief.BriefID))
+            Width: =(Parent.Width - 48 - 64) / 5 - 32
+            Wrap: =false
+            X: =24 + 1 * ((Parent.Width - 48 - 64) / 5 + 16) + 16
+            Y: =140
+      - rvTileN1:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(122, 128, 155, 1)
+            Font: =Font.'Segoe UI'
+            Height: =20
+            Size: =9
+            Text: ="IO budgets THB " & Text(Coalesce(Sum(Filter(BriefIOs, BriefID = varBrief.BriefID), Budget), 0), "#,##0")
+            Width: =(Parent.Width - 48 - 64) / 5 - 32
+            Wrap: =false
+            X: =24 + 1 * ((Parent.Width - 48 - 64) / 5 + 16) + 16
+            Y: =172
+      - rvTile2:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(226, 229, 238, 1)
+            BorderThickness: =1
+            Color: =Color.White
+            DisabledBorderColor: =RGBA(226, 229, 238, 1)
+            DisabledFill: =Color.White
+            DisplayMode: =DisplayMode.Disabled
+            Fill: =Color.White
+            Font: =Font.'Segoe UI'
+            Height: =88
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            Size: =11
+            Text: =""
+            Width: =(Parent.Width - 48 - 64) / 5
+            X: =24 + 2 * ((Parent.Width - 48 - 64) / 5 + 16)
+            Y: =112
+      - rvTileC2:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(122, 128, 155, 1)
+            Font: =Font.'Segoe UI'
+            Height: =18
+            Size: =10
+            Text: ="Line items"
+            Width: =(Parent.Width - 48 - 64) / 5 - 32
+            X: =24 + 2 * ((Parent.Width - 48 - 64) / 5 + 16) + 16
+            Y: =122
+      - rvTileV2:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =32
+            Size: =19
+            Text: =CountRows(Filter(BriefLines, BriefID = varBrief.BriefID))
+            Width: =(Parent.Width - 48 - 64) / 5 - 32
+            Wrap: =false
+            X: =24 + 2 * ((Parent.Width - 48 - 64) / 5 + 16) + 16
+            Y: =140
+      - rvTileN2:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(122, 128, 155, 1)
+            Font: =Font.'Segoe UI'
+            Height: =20
+            Size: =9
+            Text: =CountRows(Filter(BriefAdGroups, BriefID = varBrief.BriefID)) & " ad groups  ·  " & CountRows(Filter(BriefAds, BriefID = varBrief.BriefID)) & " ads / creatives"
+            Width: =(Parent.Width - 48 - 64) / 5 - 32
+            Wrap: =false
+            X: =24 + 2 * ((Parent.Width - 48 - 64) / 5 + 16) + 16
+            Y: =172
+      - rvTile3:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(226, 229, 238, 1)
+            BorderThickness: =1
+            Color: =Color.White
+            DisabledBorderColor: =RGBA(226, 229, 238, 1)
+            DisabledFill: =Color.White
+            DisplayMode: =DisplayMode.Disabled
+            Fill: =Color.White
+            Font: =Font.'Segoe UI'
+            Height: =88
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            Size: =11
+            Text: =""
+            Width: =(Parent.Width - 48 - 64) / 5
+            X: =24 + 3 * ((Parent.Width - 48 - 64) / 5 + 16)
+            Y: =112
+      - rvTileC3:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(122, 128, 155, 1)
+            Font: =Font.'Segoe UI'
+            Height: =18
+            Size: =10
+            Text: ="Flight"
+            Width: =(Parent.Width - 48 - 64) / 5 - 32
+            X: =24 + 3 * ((Parent.Width - 48 - 64) / 5 + 16) + 16
+            Y: =122
+      - rvTileV3:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =32
+            Size: =19
+            Text: =Text(varBrief.LaunchDate, "dd mmm") & " – " & Text(varBrief.EndDate, "dd mmm yy")
+            Width: =(Parent.Width - 48 - 64) / 5 - 32
+            Wrap: =false
+            X: =24 + 3 * ((Parent.Width - 48 - 64) / 5 + 16) + 16
+            Y: =140
+      - rvTileN3:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(122, 128, 155, 1)
+            Font: =Font.'Segoe UI'
+            Height: =20
+            Size: =9
+            Text: =DateDiff(varBrief.LaunchDate, varBrief.EndDate, TimeUnit.Days) + 1 & " days" & If(varBrief.BriefType in ["Extension", "Update"], "  ·  changes from " & Text(varBrief.EffectiveDate, "dd mmm"), "")
+            Width: =(Parent.Width - 48 - 64) / 5 - 32
+            Wrap: =false
+            X: =24 + 3 * ((Parent.Width - 48 - 64) / 5 + 16) + 16
+            Y: =172
+      - rvTile4:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(226, 229, 238, 1)
+            BorderThickness: =1
+            Color: =Color.White
+            DisabledBorderColor: =RGBA(226, 229, 238, 1)
+            DisabledFill: =Color.White
+            DisplayMode: =DisplayMode.Disabled
+            Fill: =Color.White
+            Font: =Font.'Segoe UI'
+            Height: =88
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            Size: =11
+            Text: =""
+            Width: =(Parent.Width - 48 - 64) / 5
+            X: =24 + 4 * ((Parent.Width - 48 - 64) / 5 + 16)
+            Y: =112
+      - rvTileC4:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(122, 128, 155, 1)
+            Font: =Font.'Segoe UI'
+            Height: =18
+            Size: =10
+            Text: ="Lead time"
+            Width: =(Parent.Width - 48 - 64) / 5 - 32
+            X: =24 + 4 * ((Parent.Width - 48 - 64) / 5 + 16) + 16
+            Y: =122
+      - rvTileV4:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =32
+            Size: =19
+            Text: =rvLeadVal.Text & " WD"
+            Width: =(Parent.Width - 48 - 64) / 5 - 32
+            Wrap: =false
+            X: =24 + 4 * ((Parent.Width - 48 - 64) / 5 + 16) + 16
+            Y: =140
+      - rvTileN4:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(122, 128, 155, 1)
+            Font: =Font.'Segoe UI'
+            Height: =20
+            Size: =9
+            Text: |-
+              =If(Value(rvLeadVal.Text) >= nfMinLeadDays, "OK (min " & nfMinLeadDays & ")", If(varBrief.IsException = "Yes", "Exception: " & varBrief.ExceptionApprover, "Under " & nfMinLeadDays & ": needs exception"))
+            Width: =(Parent.Width - 48 - 64) / 5 - 32
+            Wrap: =false
+            X: =24 + 4 * ((Parent.Width - 48 - 64) / 5 + 16) + 16
+            Y: =172
+      - rvChk:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(226, 229, 238, 1)
+            BorderThickness: =1
+            Color: =Color.White
+            DisabledBorderColor: =RGBA(226, 229, 238, 1)
+            DisabledFill: =Color.White
+            DisplayMode: =DisplayMode.Disabled
+            Fill: =Color.White
+            Font: =Font.'Segoe UI'
+            Height: =72
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            Size: =11
+            Text: =""
+            Width: =Parent.Width - 48
+            X: =24
+            Y: =216
+      - rvChkIcon:
+          Control: Classic/Icon@2.5.0
+          Properties:
+            Color: =If(rvOpen.Text = "0", RGBA(21, 128, 61, 1), RGBA(217, 140, 40, 1))
+            Height: =32
+            Icon: =If(rvOpen.Text = "0", Icon.CheckBadge, Icon.Warning)
+            Width: =32
+            X: =44
+            Y: =236
+      - rvChkT:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =26
+            Size: =14
+            Text: |-
+              =With({c: With(
+                  {
+                      b: varBrief,
+                      I: Filter(BriefIOs, BriefID = varBrief.BriefID),
+                      L: Filter(BriefLines, BriefID = varBrief.BriefID),
+                      G: Filter(BriefAdGroups, BriefID = varBrief.BriefID),
+                      A: Filter(BriefAds, BriefID = varBrief.BriefID)
+                  },
+                  Table(
+                      {No: 0, Item: "Structure", Rule: "Required", Ok: CountRows(I) > 0 && CountRows(Filter(I As io, CountRows(Filter(L, IONo = io.IONo)) = 0)) = 0 && CountRows(Filter(L As li, With({ch: LookUp(I, IONo = li.IONo).Channel}, If(ch = "YouTube", !(li.Format in ["VRC", "VVC", "Non-skip", "Bumper", "Shorts"]), li.Format in ["VRC", "VVC", "Non-skip", "Bumper", "Shorts"])))) = 0, Gap: "At least one IO, a line item in every IO, and line formats that match the IO channel"},
+                      {No: 1, Item: "PO", Rule: "Required", Ok: !IsBlank(b.PONumber) && !IsBlank(b.POLink) && b.POAmount > 0 && Round(b.POAmount, 2) >= Round(b.TotalBudget, 2), Gap: "PO number, PO file link, and a PO amount that covers the total budget"},
+                      {No: 2, Item: "Budget & split", Rule: "Required", Ok: b.TotalBudget > 0 && CountRows(I) > 0 && Round(Sum(I, Budget), 2) = Round(b.TotalBudget, 2) && CountRows(Filter(I, !(Budget > 0))) = 0 && CountRows(Filter(L, !(Budget > 0))) = 0 && CountRows(Filter(I As io, Round(Sum(Filter(L, IONo = io.IONo), Budget), 2) <> Round(io.Budget, 2))) = 0, Gap: "IO budgets must add up to the campaign budget, and line budgets to each IO budget"},
+                      {No: 3, Item: "Flight", Rule: "Required", Ok: !IsBlank(b.LaunchDate) && !IsBlank(b.EndDate) && b.EndDate >= b.LaunchDate && CountRows(Filter(I, IsBlank(StartDate) || IsBlank(EndDate) || EndDate < StartDate || StartDate < b.LaunchDate || EndDate > b.EndDate)) = 0 && CountRows(Filter(L As li, With({p: LookUp(I, IONo = li.IONo)}, IsBlank(li.StartDate) || IsBlank(li.EndDate) || li.EndDate < li.StartDate || li.StartDate < p.StartDate || li.EndDate > p.EndDate))) = 0 && CountRows(Filter(I, !IsBlank(SegmentStart) && (SegmentStart < StartDate || SegmentEnd > EndDate || SegmentEnd < SegmentStart))) = 0 && (b.BriefType = "New" || IsBlank(b.BriefType) || !IsBlank(b.EffectiveDate)), Gap: "Campaign dates; IOs inside the campaign, lines inside their IO, budget segment inside its IO; extensions need an effective date"},
+                      {No: 4, Item: "Objective & KPI", Rule: "Required", Ok: !IsBlank(b.Objective) && !IsBlank(b.KPIModel) && b.KPITarget > 0 && CountRows(Filter(I, IsBlank(KPIModel) || !(KPITarget > 0))) = 0, Gap: "Campaign objective and KPI, and a KPI model and target on every IO"},
+                      {No: 5, Item: "Audience", Rule: "Required", Ok: CountRows(L) > 0 && CountRows(Filter(L As li, If(LookUp(I, IONo = li.IONo).Channel = "YouTube", CountRows(Filter(G, IONo = li.IONo && LineNo = li.LineNo)) = 0, IsBlank(li.Audience)))) = 0 && CountRows(Filter(G, IsBlank(Audience))) = 0, Gap: "YouTube: ad groups with an audience in every line item. Others: targeting on every line"},
+                      {No: 6, Item: "Buying type / deal ID", Rule: "Required", Ok: CountRows(I) > 0 && CountRows(Filter(I, IsBlank(BuyingType) || (BuyingType in ["PG", "PMP"] && IsBlank(DealID)))) = 0, Gap: "Buying type on every IO, and a deal ID for PG or PMP"},
+                      {No: 7, Item: "Creative", Rule: "Required", Ok: CountRows(A) > 0 && CountRows(Filter(G As g, CountRows(Filter(A, IONo = g.IONo && LineNo = g.LineNo && AGNo = g.AGNo)) = 0)) = 0 && CountRows(Filter(L As li, LookUp(I, IONo = li.IONo).Channel <> "YouTube" && CountRows(Filter(A, IONo = li.IONo && LineNo = li.LineNo)) = 0)) = 0 && CountRows(Filter(A As a, !StartsWith(a.LandingURL, "https://") || With({f: LookUp(L, IONo = a.IONo && LineNo = a.LineNo).Format}, (f = "Bumper" && a.VideoLength > 6) || (f = "Non-skip" && a.VideoLength > 15)))) = 0 && CountRows(Filter(A As a, a.Action <> "Pause" && IsBlank(a.AssetURL))) = 0, Gap: "Ad per ad group, creative per non-YouTube line, video / creative link on every live ad, https:// URLs, length fits format"},
+                      {No: 8, Item: "Tracking", Rule: "Required", Ok: !IsBlank(b.Tracking), Gap: "Floodlight / pixel / UTM / 3P tag"},
+                      {No: 9, Item: "Test design", Rule: "If a test", Ok: b.IsTest <> "Yes" || !IsBlank(b.TestDesign), Gap: "Test / control, variable and duration"},
+                      {No: 10, Item: "Handover", Rule: "If needed", Ok: b.HandoverNeeded <> "Yes" || !IsBlank(b.HandoverNotes), Gap: "Handover notes"},
+                      {No: 11, Item: "Brand safety", Rule: "Default if blank", Ok: true, Gap: ""},
+                      {No: 12, Item: "Reporting & brand lift", Rule: "If BLS", Ok: b.BrandLift <> "Yes" || !IsBlank(b.BLSNotes), Gap: "Brand lift is on: add the BLS budget, dates and questions"},
+                      {No: 13, Item: "DV360 actions & IDs", Rule: "Ad Ops", Ok: b.Status in ["Draft", "Returned"] || (!(b.BriefType in ["Extension", "Update"]) || !IsBlank(b.DV360CampaignId)) && CountRows(Filter(I, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) + CountRows(Filter(L, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) + CountRows(Filter(G, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) + CountRows(Filter(A, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) = 0, Gap: "Ad Ops: an action on every IO, line, ad group and ad, and the DV360 ID for anything that already exists"}
+                  )
+              )}, CountRows(Filter(c, Ok)) & " of " & CountRows(c) & " checks passed")
+            Width: =360
+            X: =88
+            Y: =226
+      - rvChkGaps:
+          Control: Label@2.5.1
+          Properties:
+            Color: |-
+              =If(rvOpen.Text = "0", RGBA(21, 128, 61, 1), If((varBrief.Status = "With Ad Ops" && CountRows(Filter(With(
+                  {
+                      b: varBrief,
+                      I: Filter(BriefIOs, BriefID = varBrief.BriefID),
+                      L: Filter(BriefLines, BriefID = varBrief.BriefID),
+                      G: Filter(BriefAdGroups, BriefID = varBrief.BriefID),
+                      A: Filter(BriefAds, BriefID = varBrief.BriefID)
+                  },
+                  Table(
+                      {No: 0, Item: "Structure", Rule: "Required", Ok: CountRows(I) > 0 && CountRows(Filter(I As io, CountRows(Filter(L, IONo = io.IONo)) = 0)) = 0 && CountRows(Filter(L As li, With({ch: LookUp(I, IONo = li.IONo).Channel}, If(ch = "YouTube", !(li.Format in ["VRC", "VVC", "Non-skip", "Bumper", "Shorts"]), li.Format in ["VRC", "VVC", "Non-skip", "Bumper", "Shorts"])))) = 0, Gap: "At least one IO, a line item in every IO, and line formats that match the IO channel"},
+                      {No: 1, Item: "PO", Rule: "Required", Ok: !IsBlank(b.PONumber) && !IsBlank(b.POLink) && b.POAmount > 0 && Round(b.POAmount, 2) >= Round(b.TotalBudget, 2), Gap: "PO number, PO file link, and a PO amount that covers the total budget"},
+                      {No: 2, Item: "Budget & split", Rule: "Required", Ok: b.TotalBudget > 0 && CountRows(I) > 0 && Round(Sum(I, Budget), 2) = Round(b.TotalBudget, 2) && CountRows(Filter(I, !(Budget > 0))) = 0 && CountRows(Filter(L, !(Budget > 0))) = 0 && CountRows(Filter(I As io, Round(Sum(Filter(L, IONo = io.IONo), Budget), 2) <> Round(io.Budget, 2))) = 0, Gap: "IO budgets must add up to the campaign budget, and line budgets to each IO budget"},
+                      {No: 3, Item: "Flight", Rule: "Required", Ok: !IsBlank(b.LaunchDate) && !IsBlank(b.EndDate) && b.EndDate >= b.LaunchDate && CountRows(Filter(I, IsBlank(StartDate) || IsBlank(EndDate) || EndDate < StartDate || StartDate < b.LaunchDate || EndDate > b.EndDate)) = 0 && CountRows(Filter(L As li, With({p: LookUp(I, IONo = li.IONo)}, IsBlank(li.StartDate) || IsBlank(li.EndDate) || li.EndDate < li.StartDate || li.StartDate < p.StartDate || li.EndDate > p.EndDate))) = 0 && CountRows(Filter(I, !IsBlank(SegmentStart) && (SegmentStart < StartDate || SegmentEnd > EndDate || SegmentEnd < SegmentStart))) = 0 && (b.BriefType = "New" || IsBlank(b.BriefType) || !IsBlank(b.EffectiveDate)), Gap: "Campaign dates; IOs inside the campaign, lines inside their IO, budget segment inside its IO; extensions need an effective date"},
+                      {No: 4, Item: "Objective & KPI", Rule: "Required", Ok: !IsBlank(b.Objective) && !IsBlank(b.KPIModel) && b.KPITarget > 0 && CountRows(Filter(I, IsBlank(KPIModel) || !(KPITarget > 0))) = 0, Gap: "Campaign objective and KPI, and a KPI model and target on every IO"},
+                      {No: 5, Item: "Audience", Rule: "Required", Ok: CountRows(L) > 0 && CountRows(Filter(L As li, If(LookUp(I, IONo = li.IONo).Channel = "YouTube", CountRows(Filter(G, IONo = li.IONo && LineNo = li.LineNo)) = 0, IsBlank(li.Audience)))) = 0 && CountRows(Filter(G, IsBlank(Audience))) = 0, Gap: "YouTube: ad groups with an audience in every line item. Others: targeting on every line"},
+                      {No: 6, Item: "Buying type / deal ID", Rule: "Required", Ok: CountRows(I) > 0 && CountRows(Filter(I, IsBlank(BuyingType) || (BuyingType in ["PG", "PMP"] && IsBlank(DealID)))) = 0, Gap: "Buying type on every IO, and a deal ID for PG or PMP"},
+                      {No: 7, Item: "Creative", Rule: "Required", Ok: CountRows(A) > 0 && CountRows(Filter(G As g, CountRows(Filter(A, IONo = g.IONo && LineNo = g.LineNo && AGNo = g.AGNo)) = 0)) = 0 && CountRows(Filter(L As li, LookUp(I, IONo = li.IONo).Channel <> "YouTube" && CountRows(Filter(A, IONo = li.IONo && LineNo = li.LineNo)) = 0)) = 0 && CountRows(Filter(A As a, !StartsWith(a.LandingURL, "https://") || With({f: LookUp(L, IONo = a.IONo && LineNo = a.LineNo).Format}, (f = "Bumper" && a.VideoLength > 6) || (f = "Non-skip" && a.VideoLength > 15)))) = 0 && CountRows(Filter(A As a, a.Action <> "Pause" && IsBlank(a.AssetURL))) = 0, Gap: "Ad per ad group, creative per non-YouTube line, video / creative link on every live ad, https:// URLs, length fits format"},
+                      {No: 8, Item: "Tracking", Rule: "Required", Ok: !IsBlank(b.Tracking), Gap: "Floodlight / pixel / UTM / 3P tag"},
+                      {No: 9, Item: "Test design", Rule: "If a test", Ok: b.IsTest <> "Yes" || !IsBlank(b.TestDesign), Gap: "Test / control, variable and duration"},
+                      {No: 10, Item: "Handover", Rule: "If needed", Ok: b.HandoverNeeded <> "Yes" || !IsBlank(b.HandoverNotes), Gap: "Handover notes"},
+                      {No: 11, Item: "Brand safety", Rule: "Default if blank", Ok: true, Gap: ""},
+                      {No: 12, Item: "Reporting & brand lift", Rule: "If BLS", Ok: b.BrandLift <> "Yes" || !IsBlank(b.BLSNotes), Gap: "Brand lift is on: add the BLS budget, dates and questions"},
+                      {No: 13, Item: "DV360 actions & IDs", Rule: "Ad Ops", Ok: b.Status in ["Draft", "Returned"] || (!(b.BriefType in ["Extension", "Update"]) || !IsBlank(b.DV360CampaignId)) && CountRows(Filter(I, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) + CountRows(Filter(L, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) + CountRows(Filter(G, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) + CountRows(Filter(A, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) = 0, Gap: "Ad Ops: an action on every IO, line, ad group and ad, and the DV360 ID for anything that already exists"}
+                  )
+              ), !Ok && Rule <> "Ad Ops")) = 0), RGBA(74, 80, 112, 1), RGBA(196, 40, 40, 1)))
+            Font: =Font.'Segoe UI'
+            Height: =22
+            Size: =10
+            Text: |-
+              =If(rvOpen.Text = "0", "Everything Ad Ops needs is here. Check the structure below, then submit.", If((varBrief.Status = "With Ad Ops" && CountRows(Filter(With(
+                  {
+                      b: varBrief,
+                      I: Filter(BriefIOs, BriefID = varBrief.BriefID),
+                      L: Filter(BriefLines, BriefID = varBrief.BriefID),
+                      G: Filter(BriefAdGroups, BriefID = varBrief.BriefID),
+                      A: Filter(BriefAds, BriefID = varBrief.BriefID)
+                  },
+                  Table(
+                      {No: 0, Item: "Structure", Rule: "Required", Ok: CountRows(I) > 0 && CountRows(Filter(I As io, CountRows(Filter(L, IONo = io.IONo)) = 0)) = 0 && CountRows(Filter(L As li, With({ch: LookUp(I, IONo = li.IONo).Channel}, If(ch = "YouTube", !(li.Format in ["VRC", "VVC", "Non-skip", "Bumper", "Shorts"]), li.Format in ["VRC", "VVC", "Non-skip", "Bumper", "Shorts"])))) = 0, Gap: "At least one IO, a line item in every IO, and line formats that match the IO channel"},
+                      {No: 1, Item: "PO", Rule: "Required", Ok: !IsBlank(b.PONumber) && !IsBlank(b.POLink) && b.POAmount > 0 && Round(b.POAmount, 2) >= Round(b.TotalBudget, 2), Gap: "PO number, PO file link, and a PO amount that covers the total budget"},
+                      {No: 2, Item: "Budget & split", Rule: "Required", Ok: b.TotalBudget > 0 && CountRows(I) > 0 && Round(Sum(I, Budget), 2) = Round(b.TotalBudget, 2) && CountRows(Filter(I, !(Budget > 0))) = 0 && CountRows(Filter(L, !(Budget > 0))) = 0 && CountRows(Filter(I As io, Round(Sum(Filter(L, IONo = io.IONo), Budget), 2) <> Round(io.Budget, 2))) = 0, Gap: "IO budgets must add up to the campaign budget, and line budgets to each IO budget"},
+                      {No: 3, Item: "Flight", Rule: "Required", Ok: !IsBlank(b.LaunchDate) && !IsBlank(b.EndDate) && b.EndDate >= b.LaunchDate && CountRows(Filter(I, IsBlank(StartDate) || IsBlank(EndDate) || EndDate < StartDate || StartDate < b.LaunchDate || EndDate > b.EndDate)) = 0 && CountRows(Filter(L As li, With({p: LookUp(I, IONo = li.IONo)}, IsBlank(li.StartDate) || IsBlank(li.EndDate) || li.EndDate < li.StartDate || li.StartDate < p.StartDate || li.EndDate > p.EndDate))) = 0 && CountRows(Filter(I, !IsBlank(SegmentStart) && (SegmentStart < StartDate || SegmentEnd > EndDate || SegmentEnd < SegmentStart))) = 0 && (b.BriefType = "New" || IsBlank(b.BriefType) || !IsBlank(b.EffectiveDate)), Gap: "Campaign dates; IOs inside the campaign, lines inside their IO, budget segment inside its IO; extensions need an effective date"},
+                      {No: 4, Item: "Objective & KPI", Rule: "Required", Ok: !IsBlank(b.Objective) && !IsBlank(b.KPIModel) && b.KPITarget > 0 && CountRows(Filter(I, IsBlank(KPIModel) || !(KPITarget > 0))) = 0, Gap: "Campaign objective and KPI, and a KPI model and target on every IO"},
+                      {No: 5, Item: "Audience", Rule: "Required", Ok: CountRows(L) > 0 && CountRows(Filter(L As li, If(LookUp(I, IONo = li.IONo).Channel = "YouTube", CountRows(Filter(G, IONo = li.IONo && LineNo = li.LineNo)) = 0, IsBlank(li.Audience)))) = 0 && CountRows(Filter(G, IsBlank(Audience))) = 0, Gap: "YouTube: ad groups with an audience in every line item. Others: targeting on every line"},
+                      {No: 6, Item: "Buying type / deal ID", Rule: "Required", Ok: CountRows(I) > 0 && CountRows(Filter(I, IsBlank(BuyingType) || (BuyingType in ["PG", "PMP"] && IsBlank(DealID)))) = 0, Gap: "Buying type on every IO, and a deal ID for PG or PMP"},
+                      {No: 7, Item: "Creative", Rule: "Required", Ok: CountRows(A) > 0 && CountRows(Filter(G As g, CountRows(Filter(A, IONo = g.IONo && LineNo = g.LineNo && AGNo = g.AGNo)) = 0)) = 0 && CountRows(Filter(L As li, LookUp(I, IONo = li.IONo).Channel <> "YouTube" && CountRows(Filter(A, IONo = li.IONo && LineNo = li.LineNo)) = 0)) = 0 && CountRows(Filter(A As a, !StartsWith(a.LandingURL, "https://") || With({f: LookUp(L, IONo = a.IONo && LineNo = a.LineNo).Format}, (f = "Bumper" && a.VideoLength > 6) || (f = "Non-skip" && a.VideoLength > 15)))) = 0 && CountRows(Filter(A As a, a.Action <> "Pause" && IsBlank(a.AssetURL))) = 0, Gap: "Ad per ad group, creative per non-YouTube line, video / creative link on every live ad, https:// URLs, length fits format"},
+                      {No: 8, Item: "Tracking", Rule: "Required", Ok: !IsBlank(b.Tracking), Gap: "Floodlight / pixel / UTM / 3P tag"},
+                      {No: 9, Item: "Test design", Rule: "If a test", Ok: b.IsTest <> "Yes" || !IsBlank(b.TestDesign), Gap: "Test / control, variable and duration"},
+                      {No: 10, Item: "Handover", Rule: "If needed", Ok: b.HandoverNeeded <> "Yes" || !IsBlank(b.HandoverNotes), Gap: "Handover notes"},
+                      {No: 11, Item: "Brand safety", Rule: "Default if blank", Ok: true, Gap: ""},
+                      {No: 12, Item: "Reporting & brand lift", Rule: "If BLS", Ok: b.BrandLift <> "Yes" || !IsBlank(b.BLSNotes), Gap: "Brand lift is on: add the BLS budget, dates and questions"},
+                      {No: 13, Item: "DV360 actions & IDs", Rule: "Ad Ops", Ok: b.Status in ["Draft", "Returned"] || (!(b.BriefType in ["Extension", "Update"]) || !IsBlank(b.DV360CampaignId)) && CountRows(Filter(I, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) + CountRows(Filter(L, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) + CountRows(Filter(G, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) + CountRows(Filter(A, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) = 0, Gap: "Ad Ops: an action on every IO, line, ad group and ad, and the DV360 ID for anything that already exists"}
+                  )
+              ), !Ok && Rule <> "Ad Ops")) = 0), "Planner part complete. Waiting on Ad Ops: ", "To fix: ") & Concat(Filter(With(
+                  {
+                      b: varBrief,
+                      I: Filter(BriefIOs, BriefID = varBrief.BriefID),
+                      L: Filter(BriefLines, BriefID = varBrief.BriefID),
+                      G: Filter(BriefAdGroups, BriefID = varBrief.BriefID),
+                      A: Filter(BriefAds, BriefID = varBrief.BriefID)
+                  },
+                  Table(
+                      {No: 0, Item: "Structure", Rule: "Required", Ok: CountRows(I) > 0 && CountRows(Filter(I As io, CountRows(Filter(L, IONo = io.IONo)) = 0)) = 0 && CountRows(Filter(L As li, With({ch: LookUp(I, IONo = li.IONo).Channel}, If(ch = "YouTube", !(li.Format in ["VRC", "VVC", "Non-skip", "Bumper", "Shorts"]), li.Format in ["VRC", "VVC", "Non-skip", "Bumper", "Shorts"])))) = 0, Gap: "At least one IO, a line item in every IO, and line formats that match the IO channel"},
+                      {No: 1, Item: "PO", Rule: "Required", Ok: !IsBlank(b.PONumber) && !IsBlank(b.POLink) && b.POAmount > 0 && Round(b.POAmount, 2) >= Round(b.TotalBudget, 2), Gap: "PO number, PO file link, and a PO amount that covers the total budget"},
+                      {No: 2, Item: "Budget & split", Rule: "Required", Ok: b.TotalBudget > 0 && CountRows(I) > 0 && Round(Sum(I, Budget), 2) = Round(b.TotalBudget, 2) && CountRows(Filter(I, !(Budget > 0))) = 0 && CountRows(Filter(L, !(Budget > 0))) = 0 && CountRows(Filter(I As io, Round(Sum(Filter(L, IONo = io.IONo), Budget), 2) <> Round(io.Budget, 2))) = 0, Gap: "IO budgets must add up to the campaign budget, and line budgets to each IO budget"},
+                      {No: 3, Item: "Flight", Rule: "Required", Ok: !IsBlank(b.LaunchDate) && !IsBlank(b.EndDate) && b.EndDate >= b.LaunchDate && CountRows(Filter(I, IsBlank(StartDate) || IsBlank(EndDate) || EndDate < StartDate || StartDate < b.LaunchDate || EndDate > b.EndDate)) = 0 && CountRows(Filter(L As li, With({p: LookUp(I, IONo = li.IONo)}, IsBlank(li.StartDate) || IsBlank(li.EndDate) || li.EndDate < li.StartDate || li.StartDate < p.StartDate || li.EndDate > p.EndDate))) = 0 && CountRows(Filter(I, !IsBlank(SegmentStart) && (SegmentStart < StartDate || SegmentEnd > EndDate || SegmentEnd < SegmentStart))) = 0 && (b.BriefType = "New" || IsBlank(b.BriefType) || !IsBlank(b.EffectiveDate)), Gap: "Campaign dates; IOs inside the campaign, lines inside their IO, budget segment inside its IO; extensions need an effective date"},
+                      {No: 4, Item: "Objective & KPI", Rule: "Required", Ok: !IsBlank(b.Objective) && !IsBlank(b.KPIModel) && b.KPITarget > 0 && CountRows(Filter(I, IsBlank(KPIModel) || !(KPITarget > 0))) = 0, Gap: "Campaign objective and KPI, and a KPI model and target on every IO"},
+                      {No: 5, Item: "Audience", Rule: "Required", Ok: CountRows(L) > 0 && CountRows(Filter(L As li, If(LookUp(I, IONo = li.IONo).Channel = "YouTube", CountRows(Filter(G, IONo = li.IONo && LineNo = li.LineNo)) = 0, IsBlank(li.Audience)))) = 0 && CountRows(Filter(G, IsBlank(Audience))) = 0, Gap: "YouTube: ad groups with an audience in every line item. Others: targeting on every line"},
+                      {No: 6, Item: "Buying type / deal ID", Rule: "Required", Ok: CountRows(I) > 0 && CountRows(Filter(I, IsBlank(BuyingType) || (BuyingType in ["PG", "PMP"] && IsBlank(DealID)))) = 0, Gap: "Buying type on every IO, and a deal ID for PG or PMP"},
+                      {No: 7, Item: "Creative", Rule: "Required", Ok: CountRows(A) > 0 && CountRows(Filter(G As g, CountRows(Filter(A, IONo = g.IONo && LineNo = g.LineNo && AGNo = g.AGNo)) = 0)) = 0 && CountRows(Filter(L As li, LookUp(I, IONo = li.IONo).Channel <> "YouTube" && CountRows(Filter(A, IONo = li.IONo && LineNo = li.LineNo)) = 0)) = 0 && CountRows(Filter(A As a, !StartsWith(a.LandingURL, "https://") || With({f: LookUp(L, IONo = a.IONo && LineNo = a.LineNo).Format}, (f = "Bumper" && a.VideoLength > 6) || (f = "Non-skip" && a.VideoLength > 15)))) = 0 && CountRows(Filter(A As a, a.Action <> "Pause" && IsBlank(a.AssetURL))) = 0, Gap: "Ad per ad group, creative per non-YouTube line, video / creative link on every live ad, https:// URLs, length fits format"},
+                      {No: 8, Item: "Tracking", Rule: "Required", Ok: !IsBlank(b.Tracking), Gap: "Floodlight / pixel / UTM / 3P tag"},
+                      {No: 9, Item: "Test design", Rule: "If a test", Ok: b.IsTest <> "Yes" || !IsBlank(b.TestDesign), Gap: "Test / control, variable and duration"},
+                      {No: 10, Item: "Handover", Rule: "If needed", Ok: b.HandoverNeeded <> "Yes" || !IsBlank(b.HandoverNotes), Gap: "Handover notes"},
+                      {No: 11, Item: "Brand safety", Rule: "Default if blank", Ok: true, Gap: ""},
+                      {No: 12, Item: "Reporting & brand lift", Rule: "If BLS", Ok: b.BrandLift <> "Yes" || !IsBlank(b.BLSNotes), Gap: "Brand lift is on: add the BLS budget, dates and questions"},
+                      {No: 13, Item: "DV360 actions & IDs", Rule: "Ad Ops", Ok: b.Status in ["Draft", "Returned"] || (!(b.BriefType in ["Extension", "Update"]) || !IsBlank(b.DV360CampaignId)) && CountRows(Filter(I, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) + CountRows(Filter(L, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) + CountRows(Filter(G, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) + CountRows(Filter(A, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) = 0, Gap: "Ad Ops: an action on every IO, line, ad group and ad, and the DV360 ID for anything that already exists"}
+                  )
+              ), !Ok), Item, "  ·  "))
+            Width: =Parent.Width - 48 - 88 - 300
+            Wrap: =false
+            X: =88
+            Y: =252
+      - rvBarBg:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =RGBA(226, 229, 238, 1)
+            Height: =8
+            Width: =240
+            X: =Parent.Width - 24 - 276
+            Y: =248
+      - rvBar:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =If(rvOpen.Text = "0", RGBA(21, 128, 61, 1), RGBA(217, 140, 40, 1))
+            Height: =8
+            Width: |-
+              =240 * With({c: With(
+                  {
+                      b: varBrief,
+                      I: Filter(BriefIOs, BriefID = varBrief.BriefID),
+                      L: Filter(BriefLines, BriefID = varBrief.BriefID),
+                      G: Filter(BriefAdGroups, BriefID = varBrief.BriefID),
+                      A: Filter(BriefAds, BriefID = varBrief.BriefID)
+                  },
+                  Table(
+                      {No: 0, Item: "Structure", Rule: "Required", Ok: CountRows(I) > 0 && CountRows(Filter(I As io, CountRows(Filter(L, IONo = io.IONo)) = 0)) = 0 && CountRows(Filter(L As li, With({ch: LookUp(I, IONo = li.IONo).Channel}, If(ch = "YouTube", !(li.Format in ["VRC", "VVC", "Non-skip", "Bumper", "Shorts"]), li.Format in ["VRC", "VVC", "Non-skip", "Bumper", "Shorts"])))) = 0, Gap: "At least one IO, a line item in every IO, and line formats that match the IO channel"},
+                      {No: 1, Item: "PO", Rule: "Required", Ok: !IsBlank(b.PONumber) && !IsBlank(b.POLink) && b.POAmount > 0 && Round(b.POAmount, 2) >= Round(b.TotalBudget, 2), Gap: "PO number, PO file link, and a PO amount that covers the total budget"},
+                      {No: 2, Item: "Budget & split", Rule: "Required", Ok: b.TotalBudget > 0 && CountRows(I) > 0 && Round(Sum(I, Budget), 2) = Round(b.TotalBudget, 2) && CountRows(Filter(I, !(Budget > 0))) = 0 && CountRows(Filter(L, !(Budget > 0))) = 0 && CountRows(Filter(I As io, Round(Sum(Filter(L, IONo = io.IONo), Budget), 2) <> Round(io.Budget, 2))) = 0, Gap: "IO budgets must add up to the campaign budget, and line budgets to each IO budget"},
+                      {No: 3, Item: "Flight", Rule: "Required", Ok: !IsBlank(b.LaunchDate) && !IsBlank(b.EndDate) && b.EndDate >= b.LaunchDate && CountRows(Filter(I, IsBlank(StartDate) || IsBlank(EndDate) || EndDate < StartDate || StartDate < b.LaunchDate || EndDate > b.EndDate)) = 0 && CountRows(Filter(L As li, With({p: LookUp(I, IONo = li.IONo)}, IsBlank(li.StartDate) || IsBlank(li.EndDate) || li.EndDate < li.StartDate || li.StartDate < p.StartDate || li.EndDate > p.EndDate))) = 0 && CountRows(Filter(I, !IsBlank(SegmentStart) && (SegmentStart < StartDate || SegmentEnd > EndDate || SegmentEnd < SegmentStart))) = 0 && (b.BriefType = "New" || IsBlank(b.BriefType) || !IsBlank(b.EffectiveDate)), Gap: "Campaign dates; IOs inside the campaign, lines inside their IO, budget segment inside its IO; extensions need an effective date"},
+                      {No: 4, Item: "Objective & KPI", Rule: "Required", Ok: !IsBlank(b.Objective) && !IsBlank(b.KPIModel) && b.KPITarget > 0 && CountRows(Filter(I, IsBlank(KPIModel) || !(KPITarget > 0))) = 0, Gap: "Campaign objective and KPI, and a KPI model and target on every IO"},
+                      {No: 5, Item: "Audience", Rule: "Required", Ok: CountRows(L) > 0 && CountRows(Filter(L As li, If(LookUp(I, IONo = li.IONo).Channel = "YouTube", CountRows(Filter(G, IONo = li.IONo && LineNo = li.LineNo)) = 0, IsBlank(li.Audience)))) = 0 && CountRows(Filter(G, IsBlank(Audience))) = 0, Gap: "YouTube: ad groups with an audience in every line item. Others: targeting on every line"},
+                      {No: 6, Item: "Buying type / deal ID", Rule: "Required", Ok: CountRows(I) > 0 && CountRows(Filter(I, IsBlank(BuyingType) || (BuyingType in ["PG", "PMP"] && IsBlank(DealID)))) = 0, Gap: "Buying type on every IO, and a deal ID for PG or PMP"},
+                      {No: 7, Item: "Creative", Rule: "Required", Ok: CountRows(A) > 0 && CountRows(Filter(G As g, CountRows(Filter(A, IONo = g.IONo && LineNo = g.LineNo && AGNo = g.AGNo)) = 0)) = 0 && CountRows(Filter(L As li, LookUp(I, IONo = li.IONo).Channel <> "YouTube" && CountRows(Filter(A, IONo = li.IONo && LineNo = li.LineNo)) = 0)) = 0 && CountRows(Filter(A As a, !StartsWith(a.LandingURL, "https://") || With({f: LookUp(L, IONo = a.IONo && LineNo = a.LineNo).Format}, (f = "Bumper" && a.VideoLength > 6) || (f = "Non-skip" && a.VideoLength > 15)))) = 0 && CountRows(Filter(A As a, a.Action <> "Pause" && IsBlank(a.AssetURL))) = 0, Gap: "Ad per ad group, creative per non-YouTube line, video / creative link on every live ad, https:// URLs, length fits format"},
+                      {No: 8, Item: "Tracking", Rule: "Required", Ok: !IsBlank(b.Tracking), Gap: "Floodlight / pixel / UTM / 3P tag"},
+                      {No: 9, Item: "Test design", Rule: "If a test", Ok: b.IsTest <> "Yes" || !IsBlank(b.TestDesign), Gap: "Test / control, variable and duration"},
+                      {No: 10, Item: "Handover", Rule: "If needed", Ok: b.HandoverNeeded <> "Yes" || !IsBlank(b.HandoverNotes), Gap: "Handover notes"},
+                      {No: 11, Item: "Brand safety", Rule: "Default if blank", Ok: true, Gap: ""},
+                      {No: 12, Item: "Reporting & brand lift", Rule: "If BLS", Ok: b.BrandLift <> "Yes" || !IsBlank(b.BLSNotes), Gap: "Brand lift is on: add the BLS budget, dates and questions"},
+                      {No: 13, Item: "DV360 actions & IDs", Rule: "Ad Ops", Ok: b.Status in ["Draft", "Returned"] || (!(b.BriefType in ["Extension", "Update"]) || !IsBlank(b.DV360CampaignId)) && CountRows(Filter(I, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) + CountRows(Filter(L, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) + CountRows(Filter(G, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) + CountRows(Filter(A, IsBlank(Action) || (Action in ["Update", "Pause", "No change"] && IsBlank(DV360Id)))) = 0, Gap: "Ad Ops: an action on every IO, line, ad group and ad, and the DV360 ID for anything that already exists"}
+                  )
+              )}, CountRows(Filter(c, Ok)) / Max(1, CountRows(c)))
+            X: =Parent.Width - 24 - 276
+            Y: =248
+      - rvLStruct:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =28
+            Size: =15
+            Text: ="Structure"
+            Width: =200
+            X: =24
+            Y: =304
+      - rvLegend:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(122, 128, 155, 1)
+            Font: =Font.'Segoe UI'
+            Height: =22
+            Size: =9
+            Text: ="IO = insertion order   LI = line item   AG = ad group   AD = ad   CR = creative"
+            Width: =520
+            X: =140
+            Y: =308
+      - rvExpand:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(203, 208, 222, 1)
+            BorderThickness: =1
+            Color: =nfBlue
+            Fill: =Color.White
+            Font: =Font.'Segoe UI'
+            Height: =32
+            HoverFill: =RGBA(235, 238, 255, 1)
+            OnSelect: |-
+              =ClearCollect(colOpen,
+                  ForAll(Filter(BriefIOs, BriefID = varBrief.BriefID) As i, {K: "IO" & i.IONo}),
+                  ForAll(Filter(BriefLines, BriefID = varBrief.BriefID) As l, {K: "LI" & l.IONo & "." & l.LineNo}),
+                  ForAll(Filter(BriefAdGroups, BriefID = varBrief.BriefID) As g, {K: "AG" & g.IONo & "." & g.LineNo & "." & g.AGNo})
+              )
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =10
+            Text: ="Expand all"
+            Width: =112
+            X: =Parent.Width - 24 - 236
+            Y: =302
+      - rvCollapse:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(203, 208, 222, 1)
+            BorderThickness: =1
+            Color: =nfBlue
+            Fill: =Color.White
+            Font: =Font.'Segoe UI'
+            Height: =32
+            HoverFill: =RGBA(235, 238, 255, 1)
+            OnSelect: =Clear(colOpen)
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =10
+            Text: ="Collapse all"
+            Width: =116
+            X: =Parent.Width - 24 - 116
+            Y: =302
+      - rvTreeCard:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(226, 229, 238, 1)
+            BorderThickness: =1
+            Color: =Color.White
+            DisabledBorderColor: =RGBA(226, 229, 238, 1)
+            DisabledFill: =Color.White
+            DisplayMode: =DisplayMode.Disabled
+            Fill: =Color.White
+            Font: =Font.'Segoe UI'
+            Height: =Parent.Height - 344 - 84
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            Size: =11
+            Text: =""
+            Width: =Parent.Width - 48
+            X: =24
+            Y: =344
+      - rvTree:
+          Control: Gallery@2.15.0
+          Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
+          Properties:
+            Height: =Parent.Height - 344 - 86
+            Items: |-
+              =With(
+                  {T: Sort(Ungroup(Table(
+              {r: ForAll(Filter(BriefIOs, BriefID = varBrief.BriefID) As i, {Lvl: "IO", Ord: i.IONo * 100000000, IONo: i.IONo, LineNo: 0, AGNo: 0, AdNo: 0, Indent: 0, Bud: i.Budget, Act: i.Action, DvId: i.DV360Id,
+                  Label: If(IsBlank(i.Action), "", "[" & i.Action & "] ") & "IO " & i.IONo & " · " & i.IOType & If(IsBlank(i.IOFormat), "", " · " & i.IOFormat) & " · THB " & Text(i.Budget, "#,##0") & " · " & Text(i.StartDate, "dd mmm") & " – " & Text(i.EndDate, "dd mmm yy") & " · " & i.BuyingType & If(IsBlank(i.DealID), "", " " & i.DealID) & " · " & i.KPIModel & " " & i.KPITarget,
+                  Detail: "Pacing " & i.Pacing & "  ·  Freq cap " & If(IsBlank(i.FreqExposures), Coalesce(i.FreqCap, "–"), i.FreqExposures & " / " & i.FreqPeriod) & If(IsBlank(i.SegmentStart), "", "  ·  Segment " & Text(i.SegmentStart, "dd mmm") & " – " & Text(i.SegmentEnd, "dd mmm yy") & " (prior THB " & Text(Coalesce(i.PriorBudget, 0), "#,##0") & ")") & "  ·  Verification " & Coalesce(i.Verification, "–"),
+                  Nm: i.IOName, Sug: Lower(Substitute(Coalesce(LookUp(Brands, BrandName = varBrief.Brand).BrandCode, "X") & "_" & Coalesce(LookUp(nfCats, Name = varBrief.Category).Abv, "X") & "_" & Coalesce(varBrief.Franchise, "X") & "_" & Coalesce(varBrief.CampaignDesc, "X") & "_" & Coalesce(i.IOType, "X") & "-" & Coalesce(LookUp(nfObjs, Name = i.IOObjective).Abv, "X") & "-" & Coalesce(i.KPIModel, "X") & If(IsBlank(i.IOOther), "", "_" & i.IOOther), " ", "-"))})},
+              {r: ForAll(Filter(BriefLines, BriefID = varBrief.BriefID) As l, {Lvl: "LI", Ord: l.IONo * 100000000 + l.LineNo * 100000, IONo: l.IONo, LineNo: l.LineNo, AGNo: 0, AdNo: 0, Indent: 1, Bud: l.Budget, Act: l.Action, DvId: l.DV360Id,
+                  Label: If(IsBlank(l.Action), "", "[" & l.Action & "] ") & "Line item " & l.IONo & "." & l.LineNo & " · " & l.Format & " · THB " & Text(l.Budget, "#,##0") & " · " & Text(l.StartDate, "dd mmm") & " – " & Text(l.EndDate, "dd mmm yy") & " · " & l.BidStrategy & " " & l.BidTarget,
+                  Detail: Coalesce(l.Inventory, "") & If(IsBlank(l.Audience), "", "  ·  Targeting: " & l.Audience) & If(IsBlank(l.Exclusions), "", "  ·  Excl: " & l.Exclusions),
+                  Nm: l.LineItemName, Sug: Lower(Substitute(Coalesce(l.DealType, "X") & If(l.DealType = "Youtube", "-" & Coalesce(l.YTLIType, "X"), "") & "_" & Coalesce(LookUp(nfAuds, Name = l.AudTargeting).AudType, "X") & "-" & Coalesce(LookUp(nfAuds, Name = l.AudTargeting).Abv, "X") & "_" & Coalesce(l.AudTactic, "X") & "_" & Coalesce(l.Gender, "X") & "_" & Coalesce(Text(l.AgeMin), "X") & "-" & Coalesce(Text(l.AgeMax), "X") & "_" & Coalesce(LookUp(nfLangs, Name = l.Language).Abv, "X") & "_" & Coalesce(LookUp(nfDevices, Name = l.Device).Abv, "X") & "_" & Coalesce(l.Environment, "X") & "_" & Coalesce(l.Dims, "X") & "_" & Coalesce(LookUp(nfSust, Name = l.Sustainability).Abv, "X") & If(l.ServiceDisc = "YES", "_SERVICE", "") & "_" & Coalesce(l.PublisherName, "X"), " ", "-"))})},
+              {r: ForAll(Filter(BriefAdGroups, BriefID = varBrief.BriefID) As g, {Lvl: "AG", Ord: g.IONo * 100000000 + g.LineNo * 100000 + g.AGNo * 100, IONo: g.IONo, LineNo: g.LineNo, AGNo: g.AGNo, AdNo: 0, Indent: 2, Bud: 0, Act: g.Action, DvId: g.DV360Id,
+                  Label: If(IsBlank(g.Action), "", "[" & g.Action & "] ") & "Ad group " & g.IONo & "." & g.LineNo & "." & g.AGNo & " · " & g.Audience,
+                  Detail: Coalesce(g.Demographics, "") & If(IsBlank(g.Notes), "", "  ·  " & g.Notes),
+                  Nm: g.AdGroupName, Sug: Lower(Substitute(Coalesce(LookUp(nfAuds, Name = g.AudTargeting).AudType, "X") & "-" & Coalesce(LookUp(nfAuds, Name = g.AudTargeting).Abv, "X") & "_" & Coalesce(g.AudTactic, "X") & "_" & Coalesce(g.Gender, "X") & "_" & Coalesce(Text(g.AgeMin), "X") & "-" & Coalesce(Text(g.AgeMax), "X") & "_" & Coalesce(LookUp(nfLangs, Name = g.Language).Abv, "X") & "_" & Coalesce(g.VideoAdFormat, "X") & If(IsBlank(g.AGOther), "", "_" & g.AGOther), " ", "-"))})},
+              {r: ForAll(Filter(BriefAds, BriefID = varBrief.BriefID) As a, {Lvl: "AD", Ord: a.IONo * 100000000 + a.LineNo * 100000 + a.AGNo * 100 + a.AdNo, IONo: a.IONo, LineNo: a.LineNo, AGNo: a.AGNo, AdNo: a.AdNo, Indent: If(a.AGNo = 0, 2, 3), Bud: 0, Act: a.Action, DvId: a.DV360Id,
+                  Label: If(IsBlank(a.Action), "", "[" & a.Action & "] ") & If(a.AGNo = 0, "Creative " & a.IONo & "." & a.LineNo & " #", "Ad " & a.IONo & "." & a.LineNo & "." & a.AGNo & " #") & a.AdNo & If(IsBlank(a.AdFormat), "", " · " & a.AdFormat) & If(IsBlank(a.CreativeSize), "", " · " & a.CreativeSize) & If(a.VideoLength > 0, " · " & a.VideoLength & "s", ""),
+                  Detail: Coalesce(a.AssetURL, "") & "  →  " & Coalesce(a.LandingURL, "") & If(IsBlank(a.CTA), "", "  ·  CTA " & a.CTA) & If(IsBlank(a.Headline), "", "  ·  " & a.Headline) & If(IsBlank(a.Description), "", "  ·  " & a.Description),
+                  Nm: a.AdName, Sug: Lower(Substitute(Coalesce(a.AssetDesc, "X") & "_" & Coalesce(a.AssetSource, "X") & "_" & Coalesce(a.AdFormat, "X") & "_" & If(a.VideoLength > 0, Text(a.VideoLength), "X") & "_" & Coalesce(a.CTACode, "X") & "_" & Coalesce(a.Skippable, "X") & "_" & Coalesce(a.AdBuyingType, "X") & "_" & Coalesce(a.Rotation, "X") & "_" & Switch(a.Redirect, "E-retailers", "e-" & a.Retailer, "Others", Coalesce(a.Retailer, "other"), "L'Oréal D2C", "d2c", "L'Oréal non-D2C", "non-d2c", "None", "noredirect", "X") & If(IsBlank(a.AdOther), "", "_" & a.AdOther), " ", "-"))})}
+              ), r), Ord)},
+                  Filter(T, Lvl = "IO" || ("IO" & IONo) in colOpen.K && (Lvl = "LI" || ("LI" & IONo & "." & LineNo) in colOpen.K && (Lvl = "AG" || AGNo = 0 || ("AG" & IONo & "." & LineNo & "." & AGNo) in colOpen.K)))
+              )
+            TemplateSize: =52
+            Width: =Parent.Width - 50
+            X: =25
+            Y: =345
+          Children:
+            - rvRowBg:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =If(ThisItem.Lvl = "IO", RGBA(241, 243, 248, 1), Color.White)
+                  Height: =Parent.TemplateHeight
+                  Width: =Parent.TemplateWidth
+            - rvRowLine:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =RGBA(226, 229, 238, 1)
+                  Height: =1
+                  Width: =Parent.TemplateWidth - 16 - ThisItem.Indent * 24
+                  X: =16 + ThisItem.Indent * 24
+                  Y: =Parent.TemplateHeight - 1
+            - rvRowChev:
+                Control: Classic/Icon@2.5.0
+                Properties:
+                  AccessibleLabel: ="Expand or collapse"
+                  Color: =RGBA(74, 80, 112, 1)
+                  Height: =20
+                  Icon: =If(Switch(ThisItem.Lvl, "IO", "IO" & ThisItem.IONo, "LI", "LI" & ThisItem.IONo & "." & ThisItem.LineNo, "AG", "AG" & ThisItem.IONo & "." & ThisItem.LineNo & "." & ThisItem.AGNo, "") in colOpen.K, Icon.ChevronDown, Icon.ChevronRight)
+                  OnSelect: |-
+                    =If(Switch(ThisItem.Lvl, "IO", "IO" & ThisItem.IONo, "LI", "LI" & ThisItem.IONo & "." & ThisItem.LineNo, "AG", "AG" & ThisItem.IONo & "." & ThisItem.LineNo & "." & ThisItem.AGNo, "") in colOpen.K, Remove(colOpen, LookUp(colOpen, K = Switch(ThisItem.Lvl, "IO", "IO" & ThisItem.IONo, "LI", "LI" & ThisItem.IONo & "." & ThisItem.LineNo, "AG", "AG" & ThisItem.IONo & "." & ThisItem.LineNo & "." & ThisItem.AGNo, ""))), Collect(colOpen, {K: Switch(ThisItem.Lvl, "IO", "IO" & ThisItem.IONo, "LI", "LI" & ThisItem.IONo & "." & ThisItem.LineNo, "AG", "AG" & ThisItem.IONo & "." & ThisItem.LineNo & "." & ThisItem.AGNo, "")}))
+                  Visible: =ThisItem.Lvl <> "AD"
+                  Width: =20
+                  X: =16 + ThisItem.Indent * 24
+                  Y: =16
+            - rvRowBadge:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderThickness: =0
+                  Color: =Switch(ThisItem.Lvl, "IO", Color.White, "LI", Color.White, "AG", nfBlue, RGBA(74, 80, 112, 1))
+                  Fill: =Switch(ThisItem.Lvl, "IO", nfNavy, "LI", nfBlue, "AG", RGBA(235, 238, 255, 1), RGBA(236, 238, 244, 1))
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =20
+                  HoverFill: =Self.Fill
+                  OnSelect: |-
+                    =If(Switch(ThisItem.Lvl, "IO", "IO" & ThisItem.IONo, "LI", "LI" & ThisItem.IONo & "." & ThisItem.LineNo, "AG", "AG" & ThisItem.IONo & "." & ThisItem.LineNo & "." & ThisItem.AGNo, "") in colOpen.K, Remove(colOpen, LookUp(colOpen, K = Switch(ThisItem.Lvl, "IO", "IO" & ThisItem.IONo, "LI", "LI" & ThisItem.IONo & "." & ThisItem.LineNo, "AG", "AG" & ThisItem.IONo & "." & ThisItem.LineNo & "." & ThisItem.AGNo, ""))), Collect(colOpen, {K: Switch(ThisItem.Lvl, "IO", "IO" & ThisItem.IONo, "LI", "LI" & ThisItem.IONo & "." & ThisItem.LineNo, "AG", "AG" & ThisItem.IONo & "." & ThisItem.LineNo & "." & ThisItem.AGNo, "")}))
+                  PressedFill: =Self.Fill
+                  RadiusBottomLeft: =4
+                  RadiusBottomRight: =4
+                  RadiusTopLeft: =4
+                  RadiusTopRight: =4
+                  Size: =9
+                  Text: =If(ThisItem.Lvl = "AD" && ThisItem.AGNo = 0, "CR", ThisItem.Lvl)
+                  Width: =34
+                  X: =42 + ThisItem.Indent * 24
+                  Y: =16
+            - rvRowName:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(16, 20, 61, 1)
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =If(ThisItem.Lvl in ["IO", "LI"], FontWeight.Semibold, FontWeight.Normal)
+                  Height: =22
+                  OnSelect: |-
+                    =If(Switch(ThisItem.Lvl, "IO", "IO" & ThisItem.IONo, "LI", "LI" & ThisItem.IONo & "." & ThisItem.LineNo, "AG", "AG" & ThisItem.IONo & "." & ThisItem.LineNo & "." & ThisItem.AGNo, "") in colOpen.K, Remove(colOpen, LookUp(colOpen, K = Switch(ThisItem.Lvl, "IO", "IO" & ThisItem.IONo, "LI", "LI" & ThisItem.IONo & "." & ThisItem.LineNo, "AG", "AG" & ThisItem.IONo & "." & ThisItem.LineNo & "." & ThisItem.AGNo, ""))), Collect(colOpen, {K: Switch(ThisItem.Lvl, "IO", "IO" & ThisItem.IONo, "LI", "LI" & ThisItem.IONo & "." & ThisItem.LineNo, "AG", "AG" & ThisItem.IONo & "." & ThisItem.LineNo & "." & ThisItem.AGNo, "")}))
+                  Size: =11
+                  Text: =Substitute(Substitute(ThisItem.Label, Char(13), " "), Char(10), " ")
+                  Width: =Parent.TemplateWidth - 86 - ThisItem.Indent * 24 - 176
+                  Wrap: =false
+                  X: =86 + ThisItem.Indent * 24
+                  Y: =6
+            - rvRowMeta:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =18
+                  OnSelect: |-
+                    =If(Switch(ThisItem.Lvl, "IO", "IO" & ThisItem.IONo, "LI", "LI" & ThisItem.IONo & "." & ThisItem.LineNo, "AG", "AG" & ThisItem.IONo & "." & ThisItem.LineNo & "." & ThisItem.AGNo, "") in colOpen.K, Remove(colOpen, LookUp(colOpen, K = Switch(ThisItem.Lvl, "IO", "IO" & ThisItem.IONo, "LI", "LI" & ThisItem.IONo & "." & ThisItem.LineNo, "AG", "AG" & ThisItem.IONo & "." & ThisItem.LineNo & "." & ThisItem.AGNo, ""))), Collect(colOpen, {K: Switch(ThisItem.Lvl, "IO", "IO" & ThisItem.IONo, "LI", "LI" & ThisItem.IONo & "." & ThisItem.LineNo, "AG", "AG" & ThisItem.IONo & "." & ThisItem.LineNo & "." & ThisItem.AGNo, "")}))
+                  Size: =9
+                  Text: =If(IsBlank(ThisItem.Nm), "", ThisItem.Nm & "   ·   ") & Substitute(Substitute(ThisItem.Detail, Char(13), " "), Char(10), " ")
+                  Width: =Parent.TemplateWidth - 86 - ThisItem.Indent * 24 - 176
+                  Wrap: =false
+                  X: =86 + ThisItem.Indent * 24
+                  Y: =28
+            - rvRowBud:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =RGBA(16, 20, 61, 1)
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =22
+                  Size: =11
+                  Text: =If(ThisItem.Bud > 0, "THB " & Text(ThisItem.Bud, "#,##0"), "")
+                  Width: =140
+                  X: =Parent.TemplateWidth - 164
+                  Y: =6
+            - rvRowKids:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =RGBA(122, 128, 155, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =18
+                  Size: =9
+                  Text: |-
+                    =Switch(ThisItem.Lvl,
+                        "IO", CountRows(Filter(BriefLines, BriefID = varBrief.BriefID && IONo = ThisItem.IONo)) & " line items",
+                        "LI", With({g: CountRows(Filter(BriefAdGroups, BriefID = varBrief.BriefID && IONo = ThisItem.IONo && LineNo = ThisItem.LineNo))}, If(g > 0, g & " ad groups", CountRows(Filter(BriefAds, BriefID = varBrief.BriefID && IONo = ThisItem.IONo && LineNo = ThisItem.LineNo)) & " creatives")),
+                        "AG", CountRows(Filter(BriefAds, BriefID = varBrief.BriefID && IONo = ThisItem.IONo && LineNo = ThisItem.LineNo && AGNo = ThisItem.AGNo)) & " ads",
+                        "")
+                  Width: =140
+                  X: =Parent.TemplateWidth - 164
+                  Y: =28
+      - rvSdfBtn:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =Color.White
+            Fill: =nfNavy
+            Font: =Font.'Segoe UI'
+            Height: =32
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: =Set(varSdfOpen, !varSdfOpen)
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =10
+            Text: =If(varSdfOpen, "Close SDF", "SDF v11  ▾")
+            Visible: =(nfIsAdOps || nfIsGate)
+            Width: =124
+            X: =Parent.Width - 24 - 236 - 136
+            Y: =302
+      - rvSdfCard:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(226, 229, 238, 1)
+            BorderThickness: =1
+            Color: =Color.White
+            DisabledBorderColor: =RGBA(226, 229, 238, 1)
+            DisabledFill: =Color.White
+            DisplayMode: =DisplayMode.Disabled
+            Fill: =Color.White
+            Font: =Font.'Segoe UI'
+            Height: =330
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            Size: =11
+            Text: =""
+            Visible: =varSdfOpen && (nfIsAdOps || nfIsGate)
+            Width: =480
+            X: =Parent.Width - 24 - 480
+            Y: =340
+      - rvSdfT:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =26
+            Size: =14
+            Text: ="DV360 SDF v11"
+            Visible: =varSdfOpen && (nfIsAdOps || nfIsGate)
+            Width: =300
+            X: =Parent.Width - 24 - 480 + 20
+            Y: =354
+      - rvSdfSub:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(122, 128, 155, 1)
+            Font: =Font.'Segoe UI'
+            Height: =20
+            Size: =9
+            Text: ="Builds upload-ready files from this brief + the default settings list (SdfDefaults)."
+            Visible: =varSdfOpen && (nfIsAdOps || nfIsGate)
+            Width: =440
+            X: =Parent.Width - 24 - 480 + 20
+            Y: =380
+      - rvSdfFiles:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            Height: =110
+            Size: =10
+            Text: =If(CountRows(varSdfFiles) = 0, "Click Build to create the files.", Concat(varSdfFiles, "✓  " & Name & "   ·   " & Rows & If(Rows = 1, " row", " rows"), Char(10)))
+            VerticalAlign: =VerticalAlign.Top
+            Visible: =varSdfOpen && (nfIsAdOps || nfIsGate)
+            Width: =440
+            X: =Parent.Width - 24 - 480 + 20
+            Y: =406
+      - rvSdfWarn:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(180, 100, 0, 1)
+            Font: =Font.'Segoe UI'
+            Height: =84
+            Size: =9
+            Text: |-
+              =If(CountRows(varSdfFiles) = 0, "", With(
+                  {I: Filter(colSI, Coalesce(Action, "New") = "New"), L: Filter(colSL, Coalesce(Action, "New") = "New"), G: Filter(colSG, Coalesce(Action, "New") = "New"), A: Filter(colSA, Coalesce(Action, "New") in ["New", "Pause"])},
+                  Concat(Filter(Table(
+                      {t: If(IsBlank(varBrief.CampaignTaxonomy) && IsBlank(varBrief.DV360CampaignId), "Campaign name (taxonomy) is empty", "")},
+                      {t: With({n: CountRows(Filter(I, IsBlank(IOName))) + CountRows(Filter(L, IsBlank(LineItemName))) + CountRows(Filter(G, IsBlank(AdGroupName))) + CountRows(Filter(A, IsBlank(AdName)))}, If(n > 0, n & " rows without a name", ""))},
+                      {t: With({n: CountRows(Filter(A, IsBlank(AssetURL)))}, If(n > 0, n & " ads without a YouTube link", ""))},
+                      {t: If(IsBlank(LookUp(colSdfD, Title = "AD_BusinessName").Value), "Business name / logo not set: needed for YouTube responsive ads unless set on the advertiser", "")},
+                      {t: If(CountRows(Filter(colSI, Action = "Update")) > 0, "IO edits go in EDIT-SDF-InsertionOrders.csv: add the Timestamp from a fresh DV360 download before upload", "")}
+                  ), !IsBlank(t)), "• " & t, Char(10))
+              ))
+            VerticalAlign: =VerticalAlign.Top
+            Visible: =varSdfOpen && (nfIsAdOps || nfIsGate)
+            Width: =440
+            X: =Parent.Width - 24 - 480 + 20
+            Y: =516
+      - rvSdfBuild:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(203, 208, 222, 1)
+            BorderThickness: =1
+            Color: =nfBlue
+            Fill: =Color.White
+            Font: =Font.'Segoe UI'
+            HoverFill: =RGBA(235, 238, 255, 1)
+            OnSelect: |-
+              =ClearCollect(colSdfD, SdfDefaults);
+              ClearCollect(colSI, Sort(Filter(BriefIOs, BriefID = varBrief.BriefID), IONo));
+              ClearCollect(colSL, Filter(BriefLines, BriefID = varBrief.BriefID));
+              ClearCollect(colSG, Filter(BriefAdGroups, BriefID = varBrief.BriefID));
+              ClearCollect(colSA, Filter(BriefAds, BriefID = varBrief.BriefID));
+              Set(varSdfCamp, If(IsBlank(varBrief.DV360CampaignId), """Campaign Id"",""Advertiser Id"",""Name"",""Timestamp"",""Status"",""Campaign Goal"",""Campaign Goal KPI"",""Campaign Goal KPI Value"",""Creative Types"",""Campaign Budget"",""Campaign Start Date"",""Campaign End Date"",""Frequency Enabled"",""Frequency Exposures"",""Frequency Period"",""Frequency Amount"",""Campaign Budget Segments""" & Char(13) & Char(10) & Char(34) & Substitute(Coalesce(varBrief.DV360CampaignId, "ext" & Last(Split(varBrief.BriefID, "-")).Value & "c"), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(varBrief.Advertiser, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(varBrief.CampaignTaxonomy, varBrief.CampaignName), Char(34), Char(34) & Char(34)) & Char(34) & ",""""," & Char(34) & Substitute("Active", Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Switch(varBrief.Objective, "Consideration", "Drive online action or visits", "Conversion", "Drive online action or visits", "Raise awareness of my brand or product"), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(If(varBrief.KPIModel in ["CPM", "CPA", "CPC", "CTR", "CPIAVC"], varBrief.KPIModel, "Other"), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(If(varBrief.KPIModel in ["CPM", "CPA", "CPC", "CTR", "CPIAVC"], Text(varBrief.KPITarget), varBrief.KPIModel & " " & Text(varBrief.KPITarget)), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "CMP_CreativeTypes").Value & ";", Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Text(Coalesce(varBrief.TotalBudget, 0)), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Text(varBrief.LaunchDate, "mm/dd/yyyy") & " 00:00", Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Text(varBrief.EndDate, "mm/dd/yyyy") & " 23:59", Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "CMP_FreqEnabled").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "CMP_FreqExposures").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "CMP_FreqPeriod").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "CMP_FreqAmount").Value, Char(34), Char(34) & Char(34)) & Char(34) & ",""""" & Char(13) & Char(10), ""));
+              Set(varSdfIO, Concat(Filter(colSI, Coalesce(Action, "New") = "New") As i, Char(34) & Substitute(Coalesce(i.DV360Id, "ext" & Last(Split(varBrief.BriefID, "-")).Value & "io" & i.IONo), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(varBrief.DV360CampaignId, "ext" & Last(Split(varBrief.BriefID, "-")).Value & "c"), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(i.IOName, ""), Char(34), Char(34) & Char(34)) & Char(34) & ",""""," & Char(34) & Substitute(If(Coalesce(i.Action, "New") = "New", LookUp(colSdfD, Title = "NEW_IO_Status").Value, "Active"), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_IoType").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_IoSubtype").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_IoObjective").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_Fees").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_Pacing").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_PacingRate").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_PacingAmount").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute("True", Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(Text(i.FreqExposures), LookUp(colSdfD, Title = "IO_FreqExposures").Value), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_FreqPeriod").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_FreqAmount").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(i.KPIModel, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Text(i.KPITarget), Char(34), Char(34) & Char(34)) & Char(34) & ",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_BudgetType").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(If(Coalesce(i.PriorBudget, 0) > 0, "(" & Text(i.PriorBudget, "0.0#") & "; " & Text(i.StartDate, "mm/dd/yyyy") & "; " & Text(DateAdd(Coalesce(i.SegmentStart, i.StartDate), -1, TimeUnit.Days), "mm/dd/yyyy") & "; ; " & First(Split(Coalesce(varBrief.PONumber, ""), "-")).Value & ";); ", "") & "(" & Text(i.Budget, "0.0#") & "; " & Text(Coalesce(i.SegmentStart, i.StartDate), "mm/dd/yyyy") & "; " & Text(Coalesce(i.SegmentEnd, i.EndDate), "mm/dd/yyyy") & "; ; " & Last(Split(Coalesce(varBrief.PONumber, ""), "-")).Value & ";);", Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_AutoBudgetAllocation").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_Optimization").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""",""""" & Char(13) & Char(10)));
+              Set(varSdfIOEdit, Concat(Filter(colSI, Action = "Update") As i, Char(34) & Substitute(Coalesce(i.DV360Id, "ext" & Last(Split(varBrief.BriefID, "-")).Value & "io" & i.IONo), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(varBrief.DV360CampaignId, "ext" & Last(Split(varBrief.BriefID, "-")).Value & "c"), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(i.IOName, ""), Char(34), Char(34) & Char(34)) & Char(34) & ",""""," & Char(34) & Substitute(If(Coalesce(i.Action, "New") = "New", LookUp(colSdfD, Title = "NEW_IO_Status").Value, "Active"), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_IoType").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_IoSubtype").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_IoObjective").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_Fees").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_Pacing").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_PacingRate").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_PacingAmount").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute("True", Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(Text(i.FreqExposures), LookUp(colSdfD, Title = "IO_FreqExposures").Value), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_FreqPeriod").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_FreqAmount").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(i.KPIModel, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Text(i.KPITarget), Char(34), Char(34) & Char(34)) & Char(34) & ",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_BudgetType").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(If(Coalesce(i.PriorBudget, 0) > 0, "(" & Text(i.PriorBudget, "0.0#") & "; " & Text(i.StartDate, "mm/dd/yyyy") & "; " & Text(DateAdd(Coalesce(i.SegmentStart, i.StartDate), -1, TimeUnit.Days), "mm/dd/yyyy") & "; ; " & First(Split(Coalesce(varBrief.PONumber, ""), "-")).Value & ";); ", "") & "(" & Text(i.Budget, "0.0#") & "; " & Text(Coalesce(i.SegmentStart, i.StartDate), "mm/dd/yyyy") & "; " & Text(Coalesce(i.SegmentEnd, i.EndDate), "mm/dd/yyyy") & "; ; " & Last(Split(Coalesce(varBrief.PONumber, ""), "-")).Value & ";);", Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_AutoBudgetAllocation").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_Optimization").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""",""""" & Char(13) & Char(10)));
+              Set(varSdfLI, Concat(colSI As i, Concat(Filter(colSL, IONo = i.IONo && Coalesce(Action, "New") = "New") As l, Char(34) & Substitute(Coalesce(l.DV360Id, "ext" & Last(Split(varBrief.BriefID, "-")).Value & "li" & l.IONo & "x" & l.LineNo), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(i.DV360Id, "ext" & Last(Split(varBrief.BriefID, "-")).Value & "io" & i.IONo), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(i.IOName, ""), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute("TrueView", Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Switch(l.Format, "VVC", "View", "Shorts", "View", "Non-skip", "Non Skippable", "Reach"), Char(34), Char(34) & Char(34)) & Char(34) & ",""""," & Char(34) & Substitute(Coalesce(l.LineItemName, ""), Char(34), Char(34) & Char(34)) & Char(34) & ",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "NEW_LI_Status").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute("Same as Insertion Order", Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute("Same as Insertion Order", Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute("TrueView Budget", Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Text(Coalesce(l.Budget, 0)), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_Pacing").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_PacingRate").Value, Char(34), Char(34) & Char(34)) & Char(34) & ",""""," & Char(34) & Substitute("False", Char(34), Char(34) & Char(34)) & Char(34) & ","""","""",""""," & Char(34) & Substitute("False", Char(34), Char(34) & Char(34)) & Char(34) & ","""",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_PartnerRevenueModel").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_PartnerRevenueAmount").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_ConversionCountingType").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_ConversionCountingPct").Value, Char(34), Char(34) & Char(34)) & Char(34) & ",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_PrimaryAttributionModelId").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_Fees").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""","""","""","""","""","""",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_ContainsEUPoliticalAds").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""","""",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_GeoInclude").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_GeoExclude").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_KeywordListExclude").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_OptimizeFixedBidding").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_TVVideoAdFormats").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""","""",""""," & Char(34) & Substitute(If(l.BidStrategy = "Target CPV" || l.Format = "VVC", "Target CPV", "Target CPM"), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_TVBidStrategyValue").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""","""","""","""","""",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_TVCategoryExclusions").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_InventoryMode").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_TVInventorySource").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""","""","""",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_TVVideoAdInventoryControl").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""","""",""""" & Char(13) & Char(10))));
+              Set(varSdfAG, Concat(colSI As i, Concat(Filter(colSL, IONo = i.IONo) As l, Concat(Filter(colSG, IONo = i.IONo && LineNo = l.LineNo && Coalesce(Action, "New") in ["New", "Pause"]) As g, Char(34) & Substitute(Coalesce(g.DV360Id, "ext" & Last(Split(varBrief.BriefID, "-")).Value & "ag" & g.IONo & "x" & g.LineNo & "x" & g.AGNo), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(l.DV360Id, "ext" & Last(Split(varBrief.BriefID, "-")).Value & "li" & l.IONo & "x" & l.LineNo), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(l.LineItemName, ""), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(g.AdGroupName, ""), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(If(g.Action = "Pause", "Paused", "Active"), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "AG_VideoAdFormat").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""",""""," & Char(34) & Substitute(Text(Coalesce(g.BidCost, l.BidTarget, i.KPITarget)), Char(34), Char(34) & Char(34)) & Char(34) & ","""","""",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "AG_CategoryExclude").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""","""","""","""","""","""","""","""","""",""""," & Char(34) & Substitute(Switch(g.Gender, "W", "Female;", "M", "Male;", "Male; Female;") & If(LookUp(colSdfD, Title = "AG_GenderUnknown").Value = "Yes", " Unknown;", ""), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Concat(Filter(Table({a: "18-24", lo: 18, hi: 24}, {a: "25-34", lo: 25, hi: 34}, {a: "35-44", lo: 35, hi: 44}, {a: "45-54", lo: 45, hi: 54}, {a: "55-64", lo: 55, hi: 64}, {a: "65+", lo: 65, hi: 200}), lo <= Coalesce(g.AgeMax, 65) && hi >= Coalesce(g.AgeMin, 18)), a & ";", " "), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "AG_HHIncome").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "AG_Parental").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "AG_OptimizedTargeting").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""",""""," & Char(34) & Substitute(Coalesce(g.SdfAudInclude, ""), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(g.SdfAudExclude, ""), Char(34), Char(34) & Char(34)) & Char(34) & ","""",""""," & Char(34) & Substitute(Coalesce(g.SdfAffinity, ""), Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""","""","""",""""," & Char(34) & Substitute(Coalesce(g.SdfCustomList, ""), Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""","""","""","""","""","""","""","""",""""" & Char(13) & Char(10)))));
+              Set(varSdfAd, Concat(colSI As i, Concat(Filter(colSL, IONo = i.IONo) As l, Concat(Filter(colSG, IONo = i.IONo && LineNo = l.LineNo) As g, Concat(Filter(colSA, IONo = i.IONo && LineNo = l.LineNo && AGNo = g.AGNo && Coalesce(Action, "New") in ["New", "Pause"]) As a, Char(34) & Substitute(Coalesce(a.DV360Id, ""), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(g.DV360Id, "ext" & Last(Split(varBrief.BriefID, "-")).Value & "ag" & g.IONo & "x" & g.LineNo & "x" & g.AGNo), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(g.AdGroupName, ""), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(a.AdName, ""), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(If(a.Action = "Pause", "Paused", "Active"), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "AD_AdType").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(Match(Coalesce(a.AssetURL, ""), "(youtu\.be/|v=|shorts/)(?<vid>[A-Za-z0-9_\-]{11})").vid, ""), Char(34), Char(34) & Char(34)) & Char(34) & ",""""," & Char(34) & Substitute(Coalesce(a.LandingURL, ""), Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""","""",""""," & Char(34) & Substitute(Coalesce(a.CTA, ""), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(a.Headline, ""), Char(34), Char(34) & Char(34)) & Char(34) & ","""","""",""""," & Char(34) & Substitute(Coalesce(a.Headline, ""), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(a.Description, ""), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(a.Description2, ""), Char(34), Char(34) & Char(34)) & Char(34) & ","""",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "AD_BusinessName").Value, Char(34), Char(34) & Char(34)) & Char(34) & ",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "AD_LogoAssetIds").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""","""",""""" & Char(13) & Char(10))))));
+              Set(varSdfIO, If(IsBlank(varSdfIO), "", """Io Id"",""Campaign Id"",""Name"",""Timestamp"",""Status"",""Io Type"",""Io Subtype"",""Io Objective"",""Fees"",""Integration Code"",""Details"",""Pacing"",""Pacing Rate"",""Pacing Amount"",""Frequency Enabled"",""Frequency Exposures"",""Frequency Period"",""Frequency Amount"",""Kpi Type"",""Kpi Value"",""Kpi Algorithm Id"",""Budget Type"",""Budget Segments"",""Auto Budget Allocation"",""Insertion Order Optimization"",""Bid Strategy Unit"",""Bid Strategy Do Not Exceed"",""Apply Floor Price For Deals"",""Algorithm Id""" & Char(13) & Char(10) & varSdfIO));
+              Set(varSdfIOEdit, If(IsBlank(varSdfIOEdit), "", """Io Id"",""Campaign Id"",""Name"",""Timestamp"",""Status"",""Io Type"",""Io Subtype"",""Io Objective"",""Fees"",""Integration Code"",""Details"",""Pacing"",""Pacing Rate"",""Pacing Amount"",""Frequency Enabled"",""Frequency Exposures"",""Frequency Period"",""Frequency Amount"",""Kpi Type"",""Kpi Value"",""Kpi Algorithm Id"",""Budget Type"",""Budget Segments"",""Auto Budget Allocation"",""Insertion Order Optimization"",""Bid Strategy Unit"",""Bid Strategy Do Not Exceed"",""Apply Floor Price For Deals"",""Algorithm Id""" & Char(13) & Char(10) & varSdfIOEdit));
+              Set(varSdfLI, If(IsBlank(varSdfLI), "", """Line Item Id"",""Io Id"",""Io Name"",""Type"",""Subtype"",""Line Item Deal Type"",""Name"",""Timestamp"",""Status"",""Start Date"",""End Date"",""Budget Type"",""Budget Amount"",""Pacing"",""Pacing Rate"",""Pacing Amount"",""Frequency Enabled"",""Frequency Exposures"",""Frequency Period"",""Frequency Amount"",""TrueView View Frequency Enabled"",""TrueView View Frequency Exposures"",""TrueView View Frequency Period"",""Partner Revenue Model"",""Partner Revenue Amount"",""Conversion Counting Type"",""Conversion Counting Pct"",""Conversion Floodlight Activity Ids"",""Primary Attribution Model Id"",""Fees"",""Integration Code"",""Details"",""Bid Strategy Type"",""Bid Strategy Value"",""Bid Strategy Unit"",""Bid Strategy Do Not Exceed"",""Apply Floor Price For Deals"",""Algorithm Id"",""Creative Assignments"",""Contains EU Political Ads"",""Primary Status"",""Primary Status Reason"",""Demand Gen Geography And Language Targeting Level"",""Geography Targeting - Include"",""Geography Targeting - Exclude"",""Geography Regional Location List Targeting - Include"",""Geography Regional Location List Targeting - Exclude"",""Proximity Targeting"",""Proximity Location List Targeting"",""Proximity Business Chain Targeting"",""Language Targeting - Include"",""Language Targeting - Exclude"",""Device Targeting - Include"",""Device Targeting - Exclude"",""Browser Targeting - Include"",""Browser Targeting - Exclude"",""Digital Content Labels - Exclude"",""Brand Safety Sensitivity Setting"",""Brand Safety Custom Settings"",""Third Party Verification Services"",""Third Party Verification Labels"",""Channel Targeting - Include"",""Channel Targeting - Exclude"",""Site Targeting - Include"",""Site Targeting - Exclude"",""App Targeting - Include"",""App Targeting - Exclude"",""App Collection Targeting - Include"",""App Collection Targeting - Exclude"",""Category Targeting - Include"",""Category Targeting - Exclude"",""Content Genre Targeting - Include"",""Content Genre Targeting - Exclude"",""Keyword Targeting - Include"",""Keyword Targeting - Exclude"",""Keyword List Targeting - Exclude"",""Optimize Fixed Bidding"",""Optimized Targeting"",""Audience Targeting - Include"",""Audience Targeting - Exclude"",""Affinity & In Market Targeting - Include"",""Affinity & In Market Targeting - Exclude"",""Life Event Targeting - Include"",""Life Event Targeting - Exclude"",""Detailed Demo Targeting - Include"",""Detailed Demo Targeting - Exclude"",""Combined Audience Targeting"",""Custom List Targeting"",""Inventory Source Targeting - Authorized Seller Options"",""Inventory Source Targeting - Include"",""Inventory Source Targeting - Exclude"",""Inventory Source Targeting - Target New Exchanges"",""Private Deal Group Targeting Include"",""Daypart Targeting"",""Daypart Targeting Time Zone"",""Environment Targeting"",""Viewability Omid Targeting Enabled"",""Viewability Targeting Active View"",""Position Targeting - On Screen"",""Position Targeting - Display Position In Content"",""Position Targeting - Video Position In Content"",""Position Targeting - Audio Position In Content"",""Video Player Size Targeting"",""Content Duration Targeting"",""Content Stream Type Targeting"",""Audio Content Type Targeting"",""Demographic Targeting Gender"",""Demographic Targeting Age"",""Demographic Targeting Household Income"",""Demographic Targeting Parental Status"",""Connection Speed Targeting"",""Carrier Targeting - Include"",""Carrier Targeting - Exclude"",""Placement Targeting - YouTube Channels - Exclude"",""Placement Targeting - YouTube Videos - Exclude"",""Placement Targeting - Popular Content - Exclude"",""TrueView Video Ad Formats"",""TrueView Instant Deal Ad Format"",""TrueView Instant Deal Policy Restrictions"",""TrueView Instant Deal Lift Study Enablement"",""TrueView Bid Strategy Type"",""TrueView Bid Strategy Value"",""TrueView Mobile Bid Adjustment Option"",""TrueView Mobile Bid Adjustment Percentage"",""TrueView Desktop Bid Adjustment Option"",""TrueView Desktop Bid Adjustment Percentage"",""TrueView Tablet Bid Adjustment Option"",""TrueView Tablet Bid Adjustment Percentage"",""TrueView Connected TV Bid Adjustment Option"",""TrueView Connected TV Bid Adjustment Percentage"",""TrueView Category Exclusions Targeting"",""Inventory Mode"",""TrueView Inventory Source Targeting"",""TrueView Third-Party Viewability Vendor"",""TrueView Third-Party Brand Safety Vendor"",""TrueView Third-Party Reach Vendor"",""TrueView Third-Party Brand Lift Vendor"",""TrueView Target Frequency Count"",""TrueView Target Frequency Time Window"",""TrueView Video Ad Inventory Control"",""Merchant Center Account Id"",""Related Videos"",""Video Sequence Steps"",""Video Sequence Minimum Duration"",""Curated Ctv Packages Targeting - Include""" & Char(13) & Char(10) & varSdfLI));
+              Set(varSdfAG, If(IsBlank(varSdfAG), "", """Ad Group Id"",""Line Item Id"",""Line Item Name"",""Name"",""Status"",""Video Ad Format"",""Trueview Ad Source"",""Trueview Creative Assignments"",""Bid Cost"",""Keyword Targeting - Include"",""Keyword Targeting - Exclude"",""Category Targeting - Include"",""Category Targeting - Exclude"",""Placement Targeting - YouTube Channels - Include"",""Placement Targeting - YouTube Channels - Exclude"",""Placement Targeting - YouTube Videos - Include"",""Placement Targeting - YouTube Videos - Exclude"",""Placement Targeting - Popular Content - Include"",""Placement Targeting - Popular Content - Exclude"",""Placement Targeting - URLs - Include"",""Placement Targeting - URLs - Exclude"",""Placement Targeting - Apps - Include"",""Placement Targeting - Apps - Exclude"",""Placement Targeting - App Collections - Include"",""Placement Targeting - App Collections - Exclude"",""Demographic Targeting Gender"",""Demographic Targeting Age"",""Demographic Targeting Household Income"",""Demographic Targeting Parental Status"",""Optimized Targeting"",""Audience Expansion Level"",""Audience Expansion Seed List Excluded"",""Audience Targeting - Include"",""Audience Targeting - Exclude"",""Lookalike Audience Targeting - Include"",""Lookalike Audience Targeting - Exclude"",""Affinity & In Market Targeting - Include"",""Affinity & In Market Targeting - Exclude"",""Life Event Targeting - Include"",""Life Event Targeting - Exclude"",""Detailed Demo Targeting - Include"",""Detailed Demo Targeting - Exclude"",""Combined Audience Targeting"",""Custom List Targeting"",""Language Targeting - Include"",""Geography Targeting - Include"",""Geography Targeting - Exclude"",""Geography Regional Location List Targeting - Include"",""Geography Regional Location List Targeting - Exclude"",""Demand Gen Inventory Source Strategy"",""Demand Gen Enabled Inventory Sources"",""Product Filter Type"",""Product Filter Setting"",""Video Sequence Step Id"",""First Position Targeting""" & Char(13) & Char(10) & varSdfAG));
+              Set(varSdfAd, If(IsBlank(varSdfAd), "", """Ad Id"",""Ad Group Id"",""Ad Group Name"",""Name"",""Status"",""Ad Type"",""Video Id"",""Display URL"",""Landing Page URL"",""DCM Tracking - Placement Id"",""DCM Tracking - Ad Id"",""DCM Tracking - Creative Id"",""Click Tracker URL"",""Click Tracker URL Parameters"",""Call to Action"",""Headline"",""Display URL Path 1"",""Display URL Path 2"",""In-feed Video Thumbnail"",""In-feed Video Headline"",""Description 1"",""Description 2"",""In-feed Video Landing Page"",""Mobile Landing Page URL"",""Business Name"",""Landing Page URL Suffix"",""Logo Asset IDs"",""Marketing Image Asset IDs"",""Demand Gen Cards"",""Companion Banner Asset IDs"",""Pause Ad Image Asset IDs"",""Parent Creative ID""" & Char(13) & Char(10) & varSdfAd));
+              Set(varSdfFiles, Filter(Table(
+                  {Name: "SDF-Campaigns.csv", ContentBytes: varSdfCamp, Rows: CountRows(Split(varSdfCamp, Char(10))) - 2},
+                  {Name: "SDF-InsertionOrders.csv", ContentBytes: varSdfIO, Rows: CountRows(Split(varSdfIO, Char(10))) - 2},
+                  {Name: "SDF-LineItems.csv", ContentBytes: varSdfLI, Rows: CountRows(Split(varSdfLI, Char(10))) - 2},
+                  {Name: "SDF-AdGroups.csv", ContentBytes: varSdfAG, Rows: CountRows(Split(varSdfAG, Char(10))) - 2},
+                  {Name: "SDF-AdGroupAds.csv", ContentBytes: varSdfAd, Rows: CountRows(Split(varSdfAd, Char(10))) - 2},
+                  {Name: "EDIT-SDF-InsertionOrders.csv", ContentBytes: varSdfIOEdit, Rows: CountRows(Split(varSdfIOEdit, Char(10))) - 2}
+              ), !IsBlank(ContentBytes)));
+              Notify("SDF v11 files built", NotificationType.Success)
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =10
+            Text: ="Build files"
+            Visible: =varSdfOpen && (nfIsAdOps || nfIsGate)
+            Width: =110
+            X: =Parent.Width - 24 - 480 + 20
+            Y: =608
+      - rvSdfEmail:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =RGBA(16, 20, 61, 1)
+            Fill: =nfGreen
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: |-
+              =ClearCollect(colSdfD, SdfDefaults);
+              ClearCollect(colSI, Sort(Filter(BriefIOs, BriefID = varBrief.BriefID), IONo));
+              ClearCollect(colSL, Filter(BriefLines, BriefID = varBrief.BriefID));
+              ClearCollect(colSG, Filter(BriefAdGroups, BriefID = varBrief.BriefID));
+              ClearCollect(colSA, Filter(BriefAds, BriefID = varBrief.BriefID));
+              Set(varSdfCamp, If(IsBlank(varBrief.DV360CampaignId), """Campaign Id"",""Advertiser Id"",""Name"",""Timestamp"",""Status"",""Campaign Goal"",""Campaign Goal KPI"",""Campaign Goal KPI Value"",""Creative Types"",""Campaign Budget"",""Campaign Start Date"",""Campaign End Date"",""Frequency Enabled"",""Frequency Exposures"",""Frequency Period"",""Frequency Amount"",""Campaign Budget Segments""" & Char(13) & Char(10) & Char(34) & Substitute(Coalesce(varBrief.DV360CampaignId, "ext" & Last(Split(varBrief.BriefID, "-")).Value & "c"), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(varBrief.Advertiser, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(varBrief.CampaignTaxonomy, varBrief.CampaignName), Char(34), Char(34) & Char(34)) & Char(34) & ",""""," & Char(34) & Substitute("Active", Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Switch(varBrief.Objective, "Consideration", "Drive online action or visits", "Conversion", "Drive online action or visits", "Raise awareness of my brand or product"), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(If(varBrief.KPIModel in ["CPM", "CPA", "CPC", "CTR", "CPIAVC"], varBrief.KPIModel, "Other"), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(If(varBrief.KPIModel in ["CPM", "CPA", "CPC", "CTR", "CPIAVC"], Text(varBrief.KPITarget), varBrief.KPIModel & " " & Text(varBrief.KPITarget)), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "CMP_CreativeTypes").Value & ";", Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Text(Coalesce(varBrief.TotalBudget, 0)), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Text(varBrief.LaunchDate, "mm/dd/yyyy") & " 00:00", Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Text(varBrief.EndDate, "mm/dd/yyyy") & " 23:59", Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "CMP_FreqEnabled").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "CMP_FreqExposures").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "CMP_FreqPeriod").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "CMP_FreqAmount").Value, Char(34), Char(34) & Char(34)) & Char(34) & ",""""" & Char(13) & Char(10), ""));
+              Set(varSdfIO, Concat(Filter(colSI, Coalesce(Action, "New") = "New") As i, Char(34) & Substitute(Coalesce(i.DV360Id, "ext" & Last(Split(varBrief.BriefID, "-")).Value & "io" & i.IONo), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(varBrief.DV360CampaignId, "ext" & Last(Split(varBrief.BriefID, "-")).Value & "c"), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(i.IOName, ""), Char(34), Char(34) & Char(34)) & Char(34) & ",""""," & Char(34) & Substitute(If(Coalesce(i.Action, "New") = "New", LookUp(colSdfD, Title = "NEW_IO_Status").Value, "Active"), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_IoType").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_IoSubtype").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_IoObjective").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_Fees").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_Pacing").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_PacingRate").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_PacingAmount").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute("True", Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(Text(i.FreqExposures), LookUp(colSdfD, Title = "IO_FreqExposures").Value), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_FreqPeriod").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_FreqAmount").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(i.KPIModel, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Text(i.KPITarget), Char(34), Char(34) & Char(34)) & Char(34) & ",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_BudgetType").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(If(Coalesce(i.PriorBudget, 0) > 0, "(" & Text(i.PriorBudget, "0.0#") & "; " & Text(i.StartDate, "mm/dd/yyyy") & "; " & Text(DateAdd(Coalesce(i.SegmentStart, i.StartDate), -1, TimeUnit.Days), "mm/dd/yyyy") & "; ; " & First(Split(Coalesce(varBrief.PONumber, ""), "-")).Value & ";); ", "") & "(" & Text(i.Budget, "0.0#") & "; " & Text(Coalesce(i.SegmentStart, i.StartDate), "mm/dd/yyyy") & "; " & Text(Coalesce(i.SegmentEnd, i.EndDate), "mm/dd/yyyy") & "; ; " & Last(Split(Coalesce(varBrief.PONumber, ""), "-")).Value & ";);", Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_AutoBudgetAllocation").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_Optimization").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""",""""" & Char(13) & Char(10)));
+              Set(varSdfIOEdit, Concat(Filter(colSI, Action = "Update") As i, Char(34) & Substitute(Coalesce(i.DV360Id, "ext" & Last(Split(varBrief.BriefID, "-")).Value & "io" & i.IONo), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(varBrief.DV360CampaignId, "ext" & Last(Split(varBrief.BriefID, "-")).Value & "c"), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(i.IOName, ""), Char(34), Char(34) & Char(34)) & Char(34) & ",""""," & Char(34) & Substitute(If(Coalesce(i.Action, "New") = "New", LookUp(colSdfD, Title = "NEW_IO_Status").Value, "Active"), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_IoType").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_IoSubtype").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_IoObjective").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_Fees").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_Pacing").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_PacingRate").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_PacingAmount").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute("True", Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(Text(i.FreqExposures), LookUp(colSdfD, Title = "IO_FreqExposures").Value), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_FreqPeriod").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_FreqAmount").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(i.KPIModel, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Text(i.KPITarget), Char(34), Char(34) & Char(34)) & Char(34) & ",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_BudgetType").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(If(Coalesce(i.PriorBudget, 0) > 0, "(" & Text(i.PriorBudget, "0.0#") & "; " & Text(i.StartDate, "mm/dd/yyyy") & "; " & Text(DateAdd(Coalesce(i.SegmentStart, i.StartDate), -1, TimeUnit.Days), "mm/dd/yyyy") & "; ; " & First(Split(Coalesce(varBrief.PONumber, ""), "-")).Value & ";); ", "") & "(" & Text(i.Budget, "0.0#") & "; " & Text(Coalesce(i.SegmentStart, i.StartDate), "mm/dd/yyyy") & "; " & Text(Coalesce(i.SegmentEnd, i.EndDate), "mm/dd/yyyy") & "; ; " & Last(Split(Coalesce(varBrief.PONumber, ""), "-")).Value & ";);", Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_AutoBudgetAllocation").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "IO_Optimization").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""",""""" & Char(13) & Char(10)));
+              Set(varSdfLI, Concat(colSI As i, Concat(Filter(colSL, IONo = i.IONo && Coalesce(Action, "New") = "New") As l, Char(34) & Substitute(Coalesce(l.DV360Id, "ext" & Last(Split(varBrief.BriefID, "-")).Value & "li" & l.IONo & "x" & l.LineNo), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(i.DV360Id, "ext" & Last(Split(varBrief.BriefID, "-")).Value & "io" & i.IONo), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(i.IOName, ""), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute("TrueView", Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Switch(l.Format, "VVC", "View", "Shorts", "View", "Non-skip", "Non Skippable", "Reach"), Char(34), Char(34) & Char(34)) & Char(34) & ",""""," & Char(34) & Substitute(Coalesce(l.LineItemName, ""), Char(34), Char(34) & Char(34)) & Char(34) & ",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "NEW_LI_Status").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute("Same as Insertion Order", Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute("Same as Insertion Order", Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute("TrueView Budget", Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Text(Coalesce(l.Budget, 0)), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_Pacing").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_PacingRate").Value, Char(34), Char(34) & Char(34)) & Char(34) & ",""""," & Char(34) & Substitute("False", Char(34), Char(34) & Char(34)) & Char(34) & ","""","""",""""," & Char(34) & Substitute("False", Char(34), Char(34) & Char(34)) & Char(34) & ","""",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_PartnerRevenueModel").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_PartnerRevenueAmount").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_ConversionCountingType").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_ConversionCountingPct").Value, Char(34), Char(34) & Char(34)) & Char(34) & ",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_PrimaryAttributionModelId").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_Fees").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""","""","""","""","""","""",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_ContainsEUPoliticalAds").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""","""",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_GeoInclude").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_GeoExclude").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_KeywordListExclude").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_OptimizeFixedBidding").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""","""",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_TVVideoAdFormats").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""","""",""""," & Char(34) & Substitute(If(l.BidStrategy = "Target CPV" || l.Format = "VVC", "Target CPV", "Target CPM"), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_TVBidStrategyValue").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""","""","""","""","""",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_TVCategoryExclusions").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_InventoryMode").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_TVInventorySource").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""","""","""",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "LI_TVVideoAdInventoryControl").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""","""",""""" & Char(13) & Char(10))));
+              Set(varSdfAG, Concat(colSI As i, Concat(Filter(colSL, IONo = i.IONo) As l, Concat(Filter(colSG, IONo = i.IONo && LineNo = l.LineNo && Coalesce(Action, "New") in ["New", "Pause"]) As g, Char(34) & Substitute(Coalesce(g.DV360Id, "ext" & Last(Split(varBrief.BriefID, "-")).Value & "ag" & g.IONo & "x" & g.LineNo & "x" & g.AGNo), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(l.DV360Id, "ext" & Last(Split(varBrief.BriefID, "-")).Value & "li" & l.IONo & "x" & l.LineNo), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(l.LineItemName, ""), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(g.AdGroupName, ""), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(If(g.Action = "Pause", "Paused", "Active"), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "AG_VideoAdFormat").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""",""""," & Char(34) & Substitute(Text(Coalesce(g.BidCost, l.BidTarget, i.KPITarget)), Char(34), Char(34) & Char(34)) & Char(34) & ","""","""",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "AG_CategoryExclude").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""","""","""","""","""","""","""","""","""",""""," & Char(34) & Substitute(Switch(g.Gender, "W", "Female;", "M", "Male;", "Male; Female;") & If(LookUp(colSdfD, Title = "AG_GenderUnknown").Value = "Yes", " Unknown;", ""), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Concat(Filter(Table({a: "18-24", lo: 18, hi: 24}, {a: "25-34", lo: 25, hi: 34}, {a: "35-44", lo: 35, hi: 44}, {a: "45-54", lo: 45, hi: 54}, {a: "55-64", lo: 55, hi: 64}, {a: "65+", lo: 65, hi: 200}), lo <= Coalesce(g.AgeMax, 65) && hi >= Coalesce(g.AgeMin, 18)), a & ";", " "), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "AG_HHIncome").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "AG_Parental").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "AG_OptimizedTargeting").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""",""""," & Char(34) & Substitute(Coalesce(g.SdfAudInclude, ""), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(g.SdfAudExclude, ""), Char(34), Char(34) & Char(34)) & Char(34) & ","""",""""," & Char(34) & Substitute(Coalesce(g.SdfAffinity, ""), Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""","""","""",""""," & Char(34) & Substitute(Coalesce(g.SdfCustomList, ""), Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""","""","""","""","""","""","""","""",""""" & Char(13) & Char(10)))));
+              Set(varSdfAd, Concat(colSI As i, Concat(Filter(colSL, IONo = i.IONo) As l, Concat(Filter(colSG, IONo = i.IONo && LineNo = l.LineNo) As g, Concat(Filter(colSA, IONo = i.IONo && LineNo = l.LineNo && AGNo = g.AGNo && Coalesce(Action, "New") in ["New", "Pause"]) As a, Char(34) & Substitute(Coalesce(a.DV360Id, ""), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(g.DV360Id, "ext" & Last(Split(varBrief.BriefID, "-")).Value & "ag" & g.IONo & "x" & g.LineNo & "x" & g.AGNo), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(g.AdGroupName, ""), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(a.AdName, ""), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(If(a.Action = "Pause", "Paused", "Active"), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(LookUp(colSdfD, Title = "AD_AdType").Value, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(Match(Coalesce(a.AssetURL, ""), "(youtu\.be/|v=|shorts/)(?<vid>[A-Za-z0-9_\-]{11})").vid, ""), Char(34), Char(34) & Char(34)) & Char(34) & ",""""," & Char(34) & Substitute(Coalesce(a.LandingURL, ""), Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""","""",""""," & Char(34) & Substitute(Coalesce(a.CTA, ""), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(a.Headline, ""), Char(34), Char(34) & Char(34)) & Char(34) & ","""","""",""""," & Char(34) & Substitute(Coalesce(a.Headline, ""), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(a.Description, ""), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(Coalesce(a.Description2, ""), Char(34), Char(34) & Char(34)) & Char(34) & ","""",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "AD_BusinessName").Value, Char(34), Char(34) & Char(34)) & Char(34) & ",""""," & Char(34) & Substitute(LookUp(colSdfD, Title = "AD_LogoAssetIds").Value, Char(34), Char(34) & Char(34)) & Char(34) & ","""","""","""","""",""""" & Char(13) & Char(10))))));
+              Set(varSdfIO, If(IsBlank(varSdfIO), "", """Io Id"",""Campaign Id"",""Name"",""Timestamp"",""Status"",""Io Type"",""Io Subtype"",""Io Objective"",""Fees"",""Integration Code"",""Details"",""Pacing"",""Pacing Rate"",""Pacing Amount"",""Frequency Enabled"",""Frequency Exposures"",""Frequency Period"",""Frequency Amount"",""Kpi Type"",""Kpi Value"",""Kpi Algorithm Id"",""Budget Type"",""Budget Segments"",""Auto Budget Allocation"",""Insertion Order Optimization"",""Bid Strategy Unit"",""Bid Strategy Do Not Exceed"",""Apply Floor Price For Deals"",""Algorithm Id""" & Char(13) & Char(10) & varSdfIO));
+              Set(varSdfIOEdit, If(IsBlank(varSdfIOEdit), "", """Io Id"",""Campaign Id"",""Name"",""Timestamp"",""Status"",""Io Type"",""Io Subtype"",""Io Objective"",""Fees"",""Integration Code"",""Details"",""Pacing"",""Pacing Rate"",""Pacing Amount"",""Frequency Enabled"",""Frequency Exposures"",""Frequency Period"",""Frequency Amount"",""Kpi Type"",""Kpi Value"",""Kpi Algorithm Id"",""Budget Type"",""Budget Segments"",""Auto Budget Allocation"",""Insertion Order Optimization"",""Bid Strategy Unit"",""Bid Strategy Do Not Exceed"",""Apply Floor Price For Deals"",""Algorithm Id""" & Char(13) & Char(10) & varSdfIOEdit));
+              Set(varSdfLI, If(IsBlank(varSdfLI), "", """Line Item Id"",""Io Id"",""Io Name"",""Type"",""Subtype"",""Line Item Deal Type"",""Name"",""Timestamp"",""Status"",""Start Date"",""End Date"",""Budget Type"",""Budget Amount"",""Pacing"",""Pacing Rate"",""Pacing Amount"",""Frequency Enabled"",""Frequency Exposures"",""Frequency Period"",""Frequency Amount"",""TrueView View Frequency Enabled"",""TrueView View Frequency Exposures"",""TrueView View Frequency Period"",""Partner Revenue Model"",""Partner Revenue Amount"",""Conversion Counting Type"",""Conversion Counting Pct"",""Conversion Floodlight Activity Ids"",""Primary Attribution Model Id"",""Fees"",""Integration Code"",""Details"",""Bid Strategy Type"",""Bid Strategy Value"",""Bid Strategy Unit"",""Bid Strategy Do Not Exceed"",""Apply Floor Price For Deals"",""Algorithm Id"",""Creative Assignments"",""Contains EU Political Ads"",""Primary Status"",""Primary Status Reason"",""Demand Gen Geography And Language Targeting Level"",""Geography Targeting - Include"",""Geography Targeting - Exclude"",""Geography Regional Location List Targeting - Include"",""Geography Regional Location List Targeting - Exclude"",""Proximity Targeting"",""Proximity Location List Targeting"",""Proximity Business Chain Targeting"",""Language Targeting - Include"",""Language Targeting - Exclude"",""Device Targeting - Include"",""Device Targeting - Exclude"",""Browser Targeting - Include"",""Browser Targeting - Exclude"",""Digital Content Labels - Exclude"",""Brand Safety Sensitivity Setting"",""Brand Safety Custom Settings"",""Third Party Verification Services"",""Third Party Verification Labels"",""Channel Targeting - Include"",""Channel Targeting - Exclude"",""Site Targeting - Include"",""Site Targeting - Exclude"",""App Targeting - Include"",""App Targeting - Exclude"",""App Collection Targeting - Include"",""App Collection Targeting - Exclude"",""Category Targeting - Include"",""Category Targeting - Exclude"",""Content Genre Targeting - Include"",""Content Genre Targeting - Exclude"",""Keyword Targeting - Include"",""Keyword Targeting - Exclude"",""Keyword List Targeting - Exclude"",""Optimize Fixed Bidding"",""Optimized Targeting"",""Audience Targeting - Include"",""Audience Targeting - Exclude"",""Affinity & In Market Targeting - Include"",""Affinity & In Market Targeting - Exclude"",""Life Event Targeting - Include"",""Life Event Targeting - Exclude"",""Detailed Demo Targeting - Include"",""Detailed Demo Targeting - Exclude"",""Combined Audience Targeting"",""Custom List Targeting"",""Inventory Source Targeting - Authorized Seller Options"",""Inventory Source Targeting - Include"",""Inventory Source Targeting - Exclude"",""Inventory Source Targeting - Target New Exchanges"",""Private Deal Group Targeting Include"",""Daypart Targeting"",""Daypart Targeting Time Zone"",""Environment Targeting"",""Viewability Omid Targeting Enabled"",""Viewability Targeting Active View"",""Position Targeting - On Screen"",""Position Targeting - Display Position In Content"",""Position Targeting - Video Position In Content"",""Position Targeting - Audio Position In Content"",""Video Player Size Targeting"",""Content Duration Targeting"",""Content Stream Type Targeting"",""Audio Content Type Targeting"",""Demographic Targeting Gender"",""Demographic Targeting Age"",""Demographic Targeting Household Income"",""Demographic Targeting Parental Status"",""Connection Speed Targeting"",""Carrier Targeting - Include"",""Carrier Targeting - Exclude"",""Placement Targeting - YouTube Channels - Exclude"",""Placement Targeting - YouTube Videos - Exclude"",""Placement Targeting - Popular Content - Exclude"",""TrueView Video Ad Formats"",""TrueView Instant Deal Ad Format"",""TrueView Instant Deal Policy Restrictions"",""TrueView Instant Deal Lift Study Enablement"",""TrueView Bid Strategy Type"",""TrueView Bid Strategy Value"",""TrueView Mobile Bid Adjustment Option"",""TrueView Mobile Bid Adjustment Percentage"",""TrueView Desktop Bid Adjustment Option"",""TrueView Desktop Bid Adjustment Percentage"",""TrueView Tablet Bid Adjustment Option"",""TrueView Tablet Bid Adjustment Percentage"",""TrueView Connected TV Bid Adjustment Option"",""TrueView Connected TV Bid Adjustment Percentage"",""TrueView Category Exclusions Targeting"",""Inventory Mode"",""TrueView Inventory Source Targeting"",""TrueView Third-Party Viewability Vendor"",""TrueView Third-Party Brand Safety Vendor"",""TrueView Third-Party Reach Vendor"",""TrueView Third-Party Brand Lift Vendor"",""TrueView Target Frequency Count"",""TrueView Target Frequency Time Window"",""TrueView Video Ad Inventory Control"",""Merchant Center Account Id"",""Related Videos"",""Video Sequence Steps"",""Video Sequence Minimum Duration"",""Curated Ctv Packages Targeting - Include""" & Char(13) & Char(10) & varSdfLI));
+              Set(varSdfAG, If(IsBlank(varSdfAG), "", """Ad Group Id"",""Line Item Id"",""Line Item Name"",""Name"",""Status"",""Video Ad Format"",""Trueview Ad Source"",""Trueview Creative Assignments"",""Bid Cost"",""Keyword Targeting - Include"",""Keyword Targeting - Exclude"",""Category Targeting - Include"",""Category Targeting - Exclude"",""Placement Targeting - YouTube Channels - Include"",""Placement Targeting - YouTube Channels - Exclude"",""Placement Targeting - YouTube Videos - Include"",""Placement Targeting - YouTube Videos - Exclude"",""Placement Targeting - Popular Content - Include"",""Placement Targeting - Popular Content - Exclude"",""Placement Targeting - URLs - Include"",""Placement Targeting - URLs - Exclude"",""Placement Targeting - Apps - Include"",""Placement Targeting - Apps - Exclude"",""Placement Targeting - App Collections - Include"",""Placement Targeting - App Collections - Exclude"",""Demographic Targeting Gender"",""Demographic Targeting Age"",""Demographic Targeting Household Income"",""Demographic Targeting Parental Status"",""Optimized Targeting"",""Audience Expansion Level"",""Audience Expansion Seed List Excluded"",""Audience Targeting - Include"",""Audience Targeting - Exclude"",""Lookalike Audience Targeting - Include"",""Lookalike Audience Targeting - Exclude"",""Affinity & In Market Targeting - Include"",""Affinity & In Market Targeting - Exclude"",""Life Event Targeting - Include"",""Life Event Targeting - Exclude"",""Detailed Demo Targeting - Include"",""Detailed Demo Targeting - Exclude"",""Combined Audience Targeting"",""Custom List Targeting"",""Language Targeting - Include"",""Geography Targeting - Include"",""Geography Targeting - Exclude"",""Geography Regional Location List Targeting - Include"",""Geography Regional Location List Targeting - Exclude"",""Demand Gen Inventory Source Strategy"",""Demand Gen Enabled Inventory Sources"",""Product Filter Type"",""Product Filter Setting"",""Video Sequence Step Id"",""First Position Targeting""" & Char(13) & Char(10) & varSdfAG));
+              Set(varSdfAd, If(IsBlank(varSdfAd), "", """Ad Id"",""Ad Group Id"",""Ad Group Name"",""Name"",""Status"",""Ad Type"",""Video Id"",""Display URL"",""Landing Page URL"",""DCM Tracking - Placement Id"",""DCM Tracking - Ad Id"",""DCM Tracking - Creative Id"",""Click Tracker URL"",""Click Tracker URL Parameters"",""Call to Action"",""Headline"",""Display URL Path 1"",""Display URL Path 2"",""In-feed Video Thumbnail"",""In-feed Video Headline"",""Description 1"",""Description 2"",""In-feed Video Landing Page"",""Mobile Landing Page URL"",""Business Name"",""Landing Page URL Suffix"",""Logo Asset IDs"",""Marketing Image Asset IDs"",""Demand Gen Cards"",""Companion Banner Asset IDs"",""Pause Ad Image Asset IDs"",""Parent Creative ID""" & Char(13) & Char(10) & varSdfAd));
+              Set(varSdfFiles, Filter(Table(
+                  {Name: "SDF-Campaigns.csv", ContentBytes: varSdfCamp, Rows: CountRows(Split(varSdfCamp, Char(10))) - 2},
+                  {Name: "SDF-InsertionOrders.csv", ContentBytes: varSdfIO, Rows: CountRows(Split(varSdfIO, Char(10))) - 2},
+                  {Name: "SDF-LineItems.csv", ContentBytes: varSdfLI, Rows: CountRows(Split(varSdfLI, Char(10))) - 2},
+                  {Name: "SDF-AdGroups.csv", ContentBytes: varSdfAG, Rows: CountRows(Split(varSdfAG, Char(10))) - 2},
+                  {Name: "SDF-AdGroupAds.csv", ContentBytes: varSdfAd, Rows: CountRows(Split(varSdfAd, Char(10))) - 2},
+                  {Name: "EDIT-SDF-InsertionOrders.csv", ContentBytes: varSdfIOEdit, Rows: CountRows(Split(varSdfIOEdit, Char(10))) - 2}
+              ), !IsBlank(ContentBytes)));
+              Office365Outlook.SendEmailV2(
+                  nfMeEmail,
+                  "DV360 SDF v11 · " & varBrief.BriefID & " · " & Coalesce(varBrief.CampaignTaxonomy, varBrief.CampaignName),
+                  "<p>SDF v11 files for <b>" & varBrief.BriefID & "</b> (" & varBrief.Brand & ", " & Coalesce(varBrief.BriefType, "New") & " brief).</p><ul>" & Concat(varSdfFiles, "<li>" & Name & ": " & Rows & " rows</li>") & "</ul>" & "<p>Upload in DV360: advertiser " & varBrief.Advertiser & " &rarr; Resources &rarr; Structured data &rarr; Upload, in this order: Campaigns, Insertion orders, Line items, Ad groups, Ads. New rows use ext IDs so they link to each other in one upload.</p>" & If(CountRows(Filter(colSI, Action = "Update")) > 0, "<p><b>EDIT-SDF-InsertionOrders.csv</b> changes live IOs: paste the Timestamp column from a fresh DV360 download before uploading.</p>", "") & "<p>Sent from the L&#39;Or&eacute;al Brief Desk.</p>",
+                  {Attachments: ForAll(varSdfFiles, {Name: ThisRecord.Name, ContentBytes: ThisRecord.ContentBytes})}
+              );
+              Patch(BriefEvents, Defaults(BriefEvents), {BriefID: varBrief.BriefID, Event: "SDF v11 emailed", ByEmail: nfMeEmail, At: Now(), Detail: Concat(varSdfFiles, Name & " " & Rows, ", ")});
+              Notify("SDF v11 sent to " & nfMeEmail, NotificationType.Success)
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =10
+            Text: ="Email files to me"
+            Visible: =varSdfOpen && (nfIsAdOps || nfIsGate)
+            Width: =150
+            X: =Parent.Width - 24 - 480 + 140
+            Y: =608
+      - rvSdfPick:
+          Control: Classic/DropDown@2.3.1
+          Properties:
+            Font: =Font.'Segoe UI'
+            Items: =ForAll(varSdfFiles, ThisRecord.Name)
+            Items.Value: =Value
+            Size: =9
+            Visible: =varSdfOpen && (nfIsAdOps || nfIsGate) && CountRows(varSdfFiles) > 0
+            Width: =100
+            X: =Parent.Width - 24 - 480 + 300
+            Y: =608
+      - rvSdfCopy:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(203, 208, 222, 1)
+            BorderThickness: =1
+            Color: =nfBlue
+            Fill: =Color.White
+            Font: =Font.'Segoe UI'
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: =Copy(LookUp(varSdfFiles, Name = rvSdfPick.Selected.Value).ContentBytes); Notify("Copied " & rvSdfPick.Selected.Value, NotificationType.Information)
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =10
+            Text: ="Copy"
+            Visible: =varSdfOpen && (nfIsAdOps || nfIsGate) && CountRows(varSdfFiles) > 0
+            Width: =56
+            X: =Parent.Width - 24 - 480 + 404
+            Y: =608
+      - rvFootShade:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =RGBA(236, 238, 244, 1)
+            Height: =2
+            Width: =Parent.Width
+            Y: =Parent.Height - 74
+      - rvFoot:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =Color.White
+            Height: =72
+            Width: =Parent.Width
+            Y: =Parent.Height - 72
+      - rvBackEdit:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(203, 208, 222, 1)
+            BorderThickness: =1
+            Color: =If(varConfirmRecall, Color.White, nfNavy)
+            Fill: =If(varConfirmRecall, RGBA(217, 140, 40, 1), Color.White)
+            Font: =Font.'Segoe UI'
+            HoverFill: =If(varConfirmRecall, RGBA(190, 120, 30, 1), RGBA(241, 243, 248, 1))
+            OnSelect: |-
+              =Switch(
+                  true,
+                  varBrief.Status in ["Draft", "Returned"] && (varBrief.PlannerEmail = nfMeEmail || nfRole = "Admin"), Navigate(scrBrief, ScreenTransition.None),
+                  varBrief.Status in ["With Ad Ops", "With Gatekeeper"] && (varBrief.PlannerEmail = nfMeEmail || nfRole = "Admin"), If(
+                  !varConfirmRecall,
+                  Set(varConfirmRecall, true),
+                  Set(varBrief, Patch(Briefs, varBrief, {Status: "Draft"}));
+                  Patch(BriefEvents, Defaults(BriefEvents), {BriefID: varBrief.BriefID, Event: "Pulled back by planner to edit", ByEmail: nfMeEmail, At: Now(), Detail: "Resubmitting will count as a resubmission"});
+                  If(nfSendEmails, IfError(Office365Outlook.SendEmailV2(Concat(Filter(DeskTeam, Role = "Ad Ops" || Role = "Gatekeeper"), Email, ";"), "Brief pulled back for edits: " & varBrief.BriefID, "The planner is editing this brief. Please pause work on it until it is submitted again."), Notify("Saved, but the email was not sent", NotificationType.Warning)));
+                  Set(varConfirmRecall, false);
+                  Navigate(scrBrief, ScreenTransition.None)
+              ),
+                  varBrief.Status in ["Locked", "In set-up", "Set up"] && (varBrief.PlannerEmail = nfMeEmail || nfRole = "Admin"), Navigate(scrDetail, ScreenTransition.None),
+                  Navigate(scrHome, ScreenTransition.None)
+              )
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =11
+            Text: =Switch(true, varConfirmRecall, "Yes, pull back and edit", varBrief.Status in ["Draft", "Returned", "With Ad Ops", "With Gatekeeper"] && (varBrief.PlannerEmail = nfMeEmail || nfRole = "Admin"), "✎  Edit brief", varBrief.Status in ["Locked", "In set-up", "Set up"] && (varBrief.PlannerEmail = nfMeEmail || nfRole = "Admin"), "Request a change", "←  Back to list")
+            Width: =If(varConfirmRecall, 230, 190)
+            X: =24
+            Y: =Parent.Height - 56
+      - rvCancelRecall:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(203, 208, 222, 1)
+            BorderThickness: =1
+            Color: =nfBlue
+            Fill: =Color.White
+            Font: =Font.'Segoe UI'
+            HoverFill: =RGBA(241, 243, 248, 1)
+            OnSelect: =Set(varConfirmRecall, false)
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =11
+            Text: ="Cancel"
+            Visible: =varConfirmRecall
+            Width: =90
+            X: =264
+            Y: =Parent.Height - 56
+      - rvFootNote:
+          Control: Label@2.5.1
+          Properties:
+            Color: =If(varConfirmRecall || (varBrief.Status = "Draft" && !IsBlank(varBrief.SubmittedAt)), RGBA(180, 100, 0, 1), If(varTestMode, RGBA(196, 40, 40, 1), RGBA(122, 128, 155, 1)))
+            Font: =Font.'Segoe UI'
+            Size: =10
+            Text: |-
+              =Switch(
+                  true,
+                  varConfirmRecall, "Ad Ops and the Gate stop work on this brief while you edit. Submitting it again counts as 1 resubmission on your scorecard.",
+                  varTestMode && varBrief.Status in ["Draft", "Returned"], "Test mode is ON: submit skips the checks and lead time.",
+                  varBrief.Status = "Draft" && !IsBlank(varBrief.SubmittedAt) && (varBrief.PlannerEmail = nfMeEmail || nfRole = "Admin"), "Submitted before: submitting again counts as 1 resubmission on your scorecard.",
+                  varBrief.Status in ["Draft", "Returned"] && (varBrief.PlannerEmail = nfMeEmail || nfRole = "Admin"), If(rvOpen.Text = "0", "Will be sent to Ad Ops for taxonomy.", "Fix the open checks first (Edit brief)."),
+                  varBrief.Status in ["With Ad Ops", "With Gatekeeper"] && (varBrief.PlannerEmail = nfMeEmail || nfRole = "Admin"), "Viewing only. Edit brief pulls it back to you; nothing counts until you submit again.",
+                  varBrief.Status in ["Locked", "In set-up", "Set up"], "Locked brief. Changes go through Request a change (major change = new version).",
+                  "Viewing only."
+              )
+            Width: =Parent.Width - If(varConfirmRecall, 370, 230) - 300
+            X: =If(varConfirmRecall, 370, 230)
+            Y: =Parent.Height - 56
+      - rvGoNext:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =Color.White
+            Fill: =nfBlue
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =44
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: |-
+              =Switch(
+                  true,
+                  varBrief.Status = "With Ad Ops" && nfIsAdOps, Navigate(scrAdOps, ScreenTransition.None),
+                  varBrief.Status = "With Gatekeeper" && nfIsGate, Navigate(scrGate, ScreenTransition.None),
+                  Navigate(scrDetail, ScreenTransition.None)
+              )
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =11
+            Text: =Switch(true, varBrief.Status = "With Ad Ops" && nfIsAdOps, "Open Ad Ops taxonomy  →", varBrief.Status = "With Gatekeeper" && nfIsGate, "Open Gate review  →", "History & set-up  →")
+            Visible: =!(varBrief.Status in ["Draft", "Returned"] && (varBrief.PlannerEmail = nfMeEmail || nfRole = "Admin"))
+            Width: =260
+            X: =Parent.Width - 284
+            Y: =Parent.Height - 58
+      - rvSubmit:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =If(rvOpen.Text = "0", nfNavy, Color.White)
+            Fill: =If(rvOpen.Text = "0", nfGreen, nfBlue)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =44
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: |-
+              =If(
+                  !varTestMode && Value(rvOpen.Text) > 0,
+                  Notify("Not ready: fix the checks marked ✗ first.", NotificationType.Error),
+                  !varTestMode && Value(rvLeadVal.Text) < nfMinLeadDays && !(varBrief.IsException = "Yes" && !IsBlank(varBrief.ExceptionApprover)),
+                  Notify("Lead time is under " & nfMinLeadDays & " working days. Record an approved exception first.", NotificationType.Error),
+              Set(
+                  varBrief,
+                  Patch(
+                      Briefs,
+                      varBrief,
+                      {
+                          Status: "With Ad Ops",
+                          SubmittedAt: Now(),
+                          SentToAOAt: Now(),
+                          LeadTimeWD: Value(rvLeadVal.Text),
+                          GateGaps: "",
+                          Resubmits: Coalesce(varBrief.Resubmits, 0) + If(varBrief.Status = "Draft" && !IsBlank(varBrief.SubmittedAt), 1, 0)
+                      }
+                  )
+              );
+              Patch(BriefEvents, Defaults(BriefEvents), {BriefID: varBrief.BriefID, Event: If(varBrief.GateAttempts > 0 || varBrief.Resubmits > 0, "Resubmitted", "Submitted") & If(varTestMode, " (test mode)", ""), ByEmail: nfMeEmail, At: Now(), Detail: "Lead time " & rvLeadVal.Text & " working days" & If(varTestMode, "  ·  open checks: " & Value(rvOpen.Text), "")});
+              If(nfSendEmails, IfError(Office365Outlook.SendEmailV2(Concat(Filter(DeskTeam, Role = "Ad Ops"), Email, ";"), "Brief for taxonomy: " & varBrief.BriefID & " · " & varBrief.Brand, "A brief is waiting for taxonomy in the L'Oréal Brief Desk: " & Coalesce(varBrief.CampaignName, varBrief.BriefID)), Notify("Saved, but the email was not sent", NotificationType.Warning)));
+              Notify("Sent to Ad Ops", NotificationType.Success);
+              Navigate(scrHome, ScreenTransition.None)
+              )
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =11
+            Text: =If(rvOpen.Text = "0", "Submit to Ad Ops  →", "Submit to Ad Ops (" & rvOpen.Text & " open)")
+            Visible: =varBrief.Status in ["Draft", "Returned"] && (varBrief.PlannerEmail = nfMeEmail || nfRole = "Admin")
+            Width: =260
+            X: =Parent.Width - 284
+            Y: =Parent.Height - 58

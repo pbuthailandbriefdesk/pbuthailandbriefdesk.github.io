@@ -1,0 +1,538 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrScore:
+    Properties:
+      Fill: =RGBA(247, 248, 251, 1)
+      Height: =Max(App.Height, 560)
+      OnVisible: |-
+        =With(
+            {m0: Date(Value(Left(scMonth.Selected.Value, 4)), Value(Right(scMonth.Selected.Value, 2)), 1)},
+            ClearCollect(
+                colScore,
+                Filter(Briefs, SubmittedAt >= m0 && SubmittedAt < DateAdd(m0, 1, TimeUnit.Months) && Status <> "Cancelled")
+            )
+        )
+      Width: =Max(App.Width, 1024)
+    Children:
+      - scHeader:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =Color.White
+            Height: =64
+            Width: =Parent.Width
+      - scHeaderLine:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =nfGreen
+            Height: =3
+            Width: =Parent.Width
+            Y: =61
+      - scHeaderMark:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =nfNavy
+            Height: =61
+            Width: =4
+      - scTitle:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Size: =17
+            Text: ="Scorecards"
+            Width: =Parent.Width - 460
+            X: =If(true, 64, 24)
+            Y: =12
+      - scUser:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            Color: =RGBA(122, 128, 155, 1)
+            Font: =Font.'Segoe UI'
+            Height: =24
+            Size: =10
+            Text: =User().FullName & "  ·  " & nfRole
+            Width: =320
+            X: =Parent.Width - 344
+            Y: =20
+      - scBack:
+          Control: Classic/Icon@2.5.0
+          Properties:
+            AccessibleLabel: ="Back"
+            Color: =RGBA(16, 20, 61, 1)
+            Height: =32
+            Icon: =Icon.ChevronLeft
+            OnSelect: =Back()
+            Width: =32
+            X: =16
+            Y: =16
+      - scLMonth:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(74, 80, 112, 1)
+            Font: =Font.'Segoe UI'
+            Height: =20
+            Size: =10
+            Text: ="Month (by submit date)"
+            Width: =220
+            X: =24
+            Y: =76
+      - scMonth:
+          Control: Classic/DropDown@2.3.1
+          Properties:
+            Font: =Font.'Segoe UI'
+            Height: =36
+            Items: =ForAll(Sequence(12, 0) As m, Text(DateAdd(Today(), -m.Value, TimeUnit.Months), "yyyy-mm"))
+            Items.Value: =Value
+            OnChange: |-
+              =With(
+                  {m0: Date(Value(Left(scMonth.Selected.Value, 4)), Value(Right(scMonth.Selected.Value, 2)), 1)},
+                  ClearCollect(
+                      colScore,
+                      Filter(Briefs, SubmittedAt >= m0 && SubmittedAt < DateAdd(m0, 1, TimeUnit.Months) && Status <> "Cancelled")
+                  )
+              )
+            Size: =11
+            Width: =220
+            X: =24
+            Y: =98
+      - scLTeam:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(74, 80, 112, 1)
+            Font: =Font.'Segoe UI'
+            Height: =20
+            Size: =10
+            Text: ="Planner team"
+            Width: =220
+            X: =260
+            Y: =76
+      - scTeam:
+          Control: Classic/DropDown@2.3.1
+          Properties:
+            Font: =Font.'Segoe UI'
+            Height: =36
+            Items: =["All", "CPD", "Non-CPD"]
+            Items.Value: =Value
+            Size: =11
+            Width: =220
+            X: =260
+            Y: =98
+      - scCount:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =26
+            Size: =11
+            Text: =CountRows(Filter(colScore, scTeam.Selected.Value = "All" || Team = scTeam.Selected.Value)) & " briefs submitted"
+            Width: =400
+            X: =500
+            Y: =104
+      - scNote:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(122, 128, 155, 1)
+            Font: =Font.'Segoe UI'
+            Height: =24
+            Size: =9
+            Text: ="Measured to track trends together, not to single anyone out."
+            Width: =Parent.Width - 48
+            X: =24
+            Y: =Max(Parent.Height - 40, 584)
+      - scLPlan:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =30
+            Size: =15
+            Text: ="Planners"
+            Width: =400
+            X: =24
+            Y: =150
+      - scPT0Bg:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: |-
+              =If(With({d: Filter(Filter(colScore, scTeam.Selected.Value = "All" || Team = scTeam.Selected.Value), !IsBlank(PassedFirstTime))}, CountRows(d) = 0 || CountRows(Filter(d, PassedFirstTime = "Yes")) / CountRows(d) >= 0.8), RGBA(232, 250, 214, 1), RGBA(255, 232, 224, 1))
+            Height: =150
+            Width: =(Parent.Width - 48 - 4 * 16) / 5
+            X: =24 + 0 * ((Parent.Width - 48 - 4 * 16) / 5 + 16)
+            Y: =186
+      - scPT0Title:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Size: =11
+            Text: ="Pass the Gate first time"
+            VerticalAlign: =VerticalAlign.Top
+            Width: =(Parent.Width - 48 - 4 * 16) / 5 - 32
+            X: =24 + 0 * ((Parent.Width - 48 - 4 * 16) / 5 + 16) + 16
+            Y: =198
+      - scPT0Val:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =52
+            Size: =28
+            Text: |-
+              =With({d: Filter(Filter(colScore, scTeam.Selected.Value = "All" || Team = scTeam.Selected.Value), !IsBlank(PassedFirstTime))}, If(CountRows(d) = 0, "–", Text(CountRows(Filter(d, PassedFirstTime = "Yes")) / CountRows(d), "0%")))
+            Width: =(Parent.Width - 48 - 4 * 16) / 5 - 32
+            X: =24 + 0 * ((Parent.Width - 48 - 4 * 16) / 5 + 16) + 16
+            Y: =242
+      - scPT0Tgt:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(74, 80, 112, 1)
+            Font: =Font.'Segoe UI'
+            Height: =24
+            Size: =10
+            Text: ="Target ≥ 80%"
+            Width: =(Parent.Width - 48 - 4 * 16) / 5 - 32
+            X: =24 + 0 * ((Parent.Width - 48 - 4 * 16) / 5 + 16) + 16
+            Y: =298
+      - scPT1Bg:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =If(CountRows(Filter(colScore, scTeam.Selected.Value = "All" || Team = scTeam.Selected.Value)) = 0 || Average(Filter(colScore, scTeam.Selected.Value = "All" || Team = scTeam.Selected.Value), RevisionsMajor) <= 1, RGBA(232, 250, 214, 1), RGBA(255, 232, 224, 1))
+            Height: =150
+            Width: =(Parent.Width - 48 - 4 * 16) / 5
+            X: =24 + 1 * ((Parent.Width - 48 - 4 * 16) / 5 + 16)
+            Y: =186
+      - scPT1Title:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Size: =11
+            Text: ="Average revisions after Lock"
+            VerticalAlign: =VerticalAlign.Top
+            Width: =(Parent.Width - 48 - 4 * 16) / 5 - 32
+            X: =24 + 1 * ((Parent.Width - 48 - 4 * 16) / 5 + 16) + 16
+            Y: =198
+      - scPT1Val:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =52
+            Size: =28
+            Text: =If(CountRows(Filter(colScore, scTeam.Selected.Value = "All" || Team = scTeam.Selected.Value)) = 0, "–", Text(Average(Filter(colScore, scTeam.Selected.Value = "All" || Team = scTeam.Selected.Value), RevisionsMajor), "0.0"))
+            Width: =(Parent.Width - 48 - 4 * 16) / 5 - 32
+            X: =24 + 1 * ((Parent.Width - 48 - 4 * 16) / 5 + 16) + 16
+            Y: =242
+      - scPT1Tgt:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(74, 80, 112, 1)
+            Font: =Font.'Segoe UI'
+            Height: =24
+            Size: =10
+            Text: ="Target ≤ 1"
+            Width: =(Parent.Width - 48 - 4 * 16) / 5 - 32
+            X: =24 + 1 * ((Parent.Width - 48 - 4 * 16) / 5 + 16) + 16
+            Y: =298
+      - scPT2Bg:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: |-
+              =If(With({d: Filter(colScore, scTeam.Selected.Value = "All" || Team = scTeam.Selected.Value)}, CountRows(d) = 0 || CountRows(Filter(d, LeadTimeWD < 1)) / CountRows(d) <= 0.02), RGBA(232, 250, 214, 1), RGBA(255, 232, 224, 1))
+            Height: =150
+            Width: =(Parent.Width - 48 - 4 * 16) / 5
+            X: =24 + 2 * ((Parent.Width - 48 - 4 * 16) / 5 + 16)
+            Y: =186
+      - scPT2Title:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Size: =11
+            Text: ="Briefed under 1 working day"
+            VerticalAlign: =VerticalAlign.Top
+            Width: =(Parent.Width - 48 - 4 * 16) / 5 - 32
+            X: =24 + 2 * ((Parent.Width - 48 - 4 * 16) / 5 + 16) + 16
+            Y: =198
+      - scPT2Val:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =52
+            Size: =28
+            Text: |-
+              =With({d: Filter(colScore, scTeam.Selected.Value = "All" || Team = scTeam.Selected.Value)}, If(CountRows(d) = 0, "–", Text(CountRows(Filter(d, LeadTimeWD < 1)) / CountRows(d), "0%")))
+            Width: =(Parent.Width - 48 - 4 * 16) / 5 - 32
+            X: =24 + 2 * ((Parent.Width - 48 - 4 * 16) / 5 + 16) + 16
+            Y: =242
+      - scPT2Tgt:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(74, 80, 112, 1)
+            Font: =Font.'Segoe UI'
+            Height: =24
+            Size: =10
+            Text: ="Target ≤ 2%"
+            Width: =(Parent.Width - 48 - 4 * 16) / 5 - 32
+            X: =24 + 2 * ((Parent.Width - 48 - 4 * 16) / 5 + 16) + 16
+            Y: =298
+      - scPT3Bg:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =If(Sum(Filter(colScore, scTeam.Selected.Value = "All" || Team = scTeam.Selected.Value), Coalesce(Resubmits, 0)) = 0, RGBA(232, 250, 214, 1), RGBA(255, 232, 224, 1))
+            Height: =150
+            Width: =(Parent.Width - 48 - 4 * 16) / 5
+            X: =24 + 3 * ((Parent.Width - 48 - 4 * 16) / 5 + 16)
+            Y: =186
+      - scPT3Title:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Size: =11
+            Text: ="Resubmitted after submit"
+            VerticalAlign: =VerticalAlign.Top
+            Width: =(Parent.Width - 48 - 4 * 16) / 5 - 32
+            X: =24 + 3 * ((Parent.Width - 48 - 4 * 16) / 5 + 16) + 16
+            Y: =198
+      - scPT3Val:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =52
+            Size: =28
+            Text: =Sum(Filter(colScore, scTeam.Selected.Value = "All" || Team = scTeam.Selected.Value), Coalesce(Resubmits, 0))
+            Width: =(Parent.Width - 48 - 4 * 16) / 5 - 32
+            X: =24 + 3 * ((Parent.Width - 48 - 4 * 16) / 5 + 16) + 16
+            Y: =242
+      - scPT3Tgt:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(74, 80, 112, 1)
+            Font: =Font.'Segoe UI'
+            Height: =24
+            Size: =10
+            Text: ="Target 0"
+            Width: =(Parent.Width - 48 - 4 * 16) / 5 - 32
+            X: =24 + 3 * ((Parent.Width - 48 - 4 * 16) / 5 + 16) + 16
+            Y: =298
+      - scPT4Bg:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =If(CountRows(Filter(Filter(colScore, scTeam.Selected.Value = "All" || Team = scTeam.Selected.Value), IsBlank(PONumber))) = 0, RGBA(232, 250, 214, 1), RGBA(255, 232, 224, 1))
+            Height: =150
+            Width: =(Parent.Width - 48 - 4 * 16) / 5
+            X: =24 + 4 * ((Parent.Width - 48 - 4 * 16) / 5 + 16)
+            Y: =186
+      - scPT4Title:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Size: =11
+            Text: ="Briefs without a PO"
+            VerticalAlign: =VerticalAlign.Top
+            Width: =(Parent.Width - 48 - 4 * 16) / 5 - 32
+            X: =24 + 4 * ((Parent.Width - 48 - 4 * 16) / 5 + 16) + 16
+            Y: =198
+      - scPT4Val:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =52
+            Size: =28
+            Text: =CountRows(Filter(Filter(colScore, scTeam.Selected.Value = "All" || Team = scTeam.Selected.Value), IsBlank(PONumber)))
+            Width: =(Parent.Width - 48 - 4 * 16) / 5 - 32
+            X: =24 + 4 * ((Parent.Width - 48 - 4 * 16) / 5 + 16) + 16
+            Y: =242
+      - scPT4Tgt:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(74, 80, 112, 1)
+            Font: =Font.'Segoe UI'
+            Height: =24
+            Size: =10
+            Text: ="Target 0"
+            Width: =(Parent.Width - 48 - 4 * 16) / 5 - 32
+            X: =24 + 4 * ((Parent.Width - 48 - 4 * 16) / 5 + 16) + 16
+            Y: =298
+      - scLAO:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =30
+            Size: =15
+            Text: ="Ad Ops"
+            Width: =400
+            X: =24
+            Y: =356
+      - scAT0Bg:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: |-
+              =If(With({d: Filter(Filter(colScore, scTeam.Selected.Value = "All" || Team = scTeam.Selected.Value), !IsBlank(TaxonomyDoneAt))}, CountRows(d) = 0 || CountRows(Filter(d, DateDiff(SentToAOAt, TaxonomyDoneAt, TimeUnit.Minutes) <= nfAOTurnaroundHours * 60)) / CountRows(d) >= 0.95), RGBA(232, 250, 214, 1), RGBA(255, 232, 224, 1))
+            Height: =150
+            Width: =(Parent.Width - 48 - 3 * 16) / 4
+            X: =24 + 0 * ((Parent.Width - 48 - 3 * 16) / 4 + 16)
+            Y: =392
+      - scAT0Title:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Size: =11
+            Text: ="Taxonomy on time"
+            VerticalAlign: =VerticalAlign.Top
+            Width: =(Parent.Width - 48 - 3 * 16) / 4 - 32
+            X: =24 + 0 * ((Parent.Width - 48 - 3 * 16) / 4 + 16) + 16
+            Y: =404
+      - scAT0Val:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =52
+            Size: =28
+            Text: |-
+              =With({d: Filter(Filter(colScore, scTeam.Selected.Value = "All" || Team = scTeam.Selected.Value), !IsBlank(TaxonomyDoneAt))}, If(CountRows(d) = 0, "–", Text(CountRows(Filter(d, DateDiff(SentToAOAt, TaxonomyDoneAt, TimeUnit.Minutes) <= nfAOTurnaroundHours * 60)) / CountRows(d), "0%")))
+            Width: =(Parent.Width - 48 - 3 * 16) / 4 - 32
+            X: =24 + 0 * ((Parent.Width - 48 - 3 * 16) / 4 + 16) + 16
+            Y: =448
+      - scAT0Tgt:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(74, 80, 112, 1)
+            Font: =Font.'Segoe UI'
+            Height: =24
+            Size: =10
+            Text: ="Target ≥ 95%"
+            Width: =(Parent.Width - 48 - 3 * 16) / 4 - 32
+            X: =24 + 0 * ((Parent.Width - 48 - 3 * 16) / 4 + 16) + 16
+            Y: =504
+      - scAT1Bg:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: |-
+              =If(With({d: Filter(Filter(colScore, scTeam.Selected.Value = "All" || Team = scTeam.Selected.Value), !IsBlank(TaxonomyDoneAt))}, CountRows(d) = 0 || CountRows(Filter(d, TaxonomyFixes = 0)) / CountRows(d) >= 0.95), RGBA(232, 250, 214, 1), RGBA(255, 232, 224, 1))
+            Height: =150
+            Width: =(Parent.Width - 48 - 3 * 16) / 4
+            X: =24 + 1 * ((Parent.Width - 48 - 3 * 16) / 4 + 16)
+            Y: =392
+      - scAT1Title:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Size: =11
+            Text: ="Taxonomy right first time"
+            VerticalAlign: =VerticalAlign.Top
+            Width: =(Parent.Width - 48 - 3 * 16) / 4 - 32
+            X: =24 + 1 * ((Parent.Width - 48 - 3 * 16) / 4 + 16) + 16
+            Y: =404
+      - scAT1Val:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =52
+            Size: =28
+            Text: |-
+              =With({d: Filter(Filter(colScore, scTeam.Selected.Value = "All" || Team = scTeam.Selected.Value), !IsBlank(TaxonomyDoneAt))}, If(CountRows(d) = 0, "–", Text(CountRows(Filter(d, TaxonomyFixes = 0)) / CountRows(d), "0%")))
+            Width: =(Parent.Width - 48 - 3 * 16) / 4 - 32
+            X: =24 + 1 * ((Parent.Width - 48 - 3 * 16) / 4 + 16) + 16
+            Y: =448
+      - scAT1Tgt:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(74, 80, 112, 1)
+            Font: =Font.'Segoe UI'
+            Height: =24
+            Size: =10
+            Text: ="Target ≥ 95%"
+            Width: =(Parent.Width - 48 - 3 * 16) / 4 - 32
+            X: =24 + 1 * ((Parent.Width - 48 - 3 * 16) / 4 + 16) + 16
+            Y: =504
+      - scAT2Bg:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =If(Sum(Filter(colScore, scTeam.Selected.Value = "All" || Team = scTeam.Selected.Value), PostLaunchNamingFixes) = 0, RGBA(232, 250, 214, 1), RGBA(255, 232, 224, 1))
+            Height: =150
+            Width: =(Parent.Width - 48 - 3 * 16) / 4
+            X: =24 + 2 * ((Parent.Width - 48 - 3 * 16) / 4 + 16)
+            Y: =392
+      - scAT2Title:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Size: =11
+            Text: ="Naming fixes after launch"
+            VerticalAlign: =VerticalAlign.Top
+            Width: =(Parent.Width - 48 - 3 * 16) / 4 - 32
+            X: =24 + 2 * ((Parent.Width - 48 - 3 * 16) / 4 + 16) + 16
+            Y: =404
+      - scAT2Val:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =52
+            Size: =28
+            Text: =Sum(Filter(colScore, scTeam.Selected.Value = "All" || Team = scTeam.Selected.Value), PostLaunchNamingFixes)
+            Width: =(Parent.Width - 48 - 3 * 16) / 4 - 32
+            X: =24 + 2 * ((Parent.Width - 48 - 3 * 16) / 4 + 16) + 16
+            Y: =448
+      - scAT2Tgt:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(74, 80, 112, 1)
+            Font: =Font.'Segoe UI'
+            Height: =24
+            Size: =10
+            Text: ="Target 0"
+            Width: =(Parent.Width - 48 - 3 * 16) / 4 - 32
+            X: =24 + 2 * ((Parent.Width - 48 - 3 * 16) / 4 + 16) + 16
+            Y: =504
+      - scAONote:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(122, 128, 155, 1)
+            Font: =Font.'Segoe UI'
+            Height: =24
+            Size: =9
+            Text: ="Taxonomy on time = done within " & nfAOTurnaroundHours & " hours of reaching Ad Ops. Change nfAOTurnaroundHours in App.Formulas."
+            Width: =Parent.Width - 48
+            X: =24
+            Y: =552

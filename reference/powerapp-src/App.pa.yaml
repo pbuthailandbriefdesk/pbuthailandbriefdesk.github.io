@@ -1,0 +1,36 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+App:
+  Properties:
+    Formulas: |-
+      =nfNavy = RGBA(0, 0, 80, 1);
+      nfBlue = RGBA(84, 101, 255, 1);
+      nfGreen = RGBA(176, 244, 103, 1);
+      nfGrey = RGBA(242, 242, 245, 1);
+      nfMinLeadDays = 3;
+      nfCutOffHour = 15;
+      nfAOTurnaroundHours = 24;
+      nfSendEmails = true;
+      nfMeEmail = Lower(User().Email);
+      nfMe = LookUp(DeskTeam, Lower(Email) = nfMeEmail);
+      nfRole = Coalesce(nfMe.Role, "Planner");
+      nfIsAdOps = nfRole in ["Ad Ops", "Admin"];
+      nfIsGate = nfRole in ["Gatekeeper", "Buyer", "Admin"];
+      nfObjs = Table({Name: "Raise_awareness_of_my_brand_or_product", Abv: "aw"}, {Name: "Drive_online_action_or_visits", Abv: "cva"}, {Name: "Drive_offline_or_instore_sales", Abv: "cvo"}, {Name: "Drive_app_installs_or_engagements", Abv: "cons"}, {Name: "PerfOfflineSales_US_Only", Abv: "cvo-us"});
+      nfDevices = Table({Name: "All", Abv: "all"}, {Name: "Connected TV", Abv: "CTV"}, {Name: "Desktop", Abv: "Desk"}, {Name: "DOOH", Abv: "DOOH"}, {Name: "Mobile", Abv: "Mob"}, {Name: "Tablet", Abv: "Tab"});
+      nfSust = Table({Name: "No optimisation", Abv: "na"}, {Name: "Creative weight optimized", Abv: "cwopt"}, {Name: "Wifi Targeting", Abv: "wifitg"}, {Name: "Both Creative weight optimized & Wifi targeting", Abv: "cwopt-wifitg"});
+      nfLangs = Table({Name: "ALL", Abv: "ALL"}, {Name: "Thai", Abv: "TH"}, {Name: "English", Abv: "EN"}, {Name: "Chinese", Abv: "ZH"}, {Name: "Japanese", Abv: "JA"}, {Name: "Korean", Abv: "KO"}, {Name: "Burmese", Abv: "MY"}, {Name: "Malay", Abv: "MS"}, {Name: "Vietnamese", Abv: "VI"}, {Name: "Laothian", Abv: "LO"}, {Name: "Cambodian", Abv: "KM"}, {Name: "Indonesian", Abv: "IN"});
+      nfAuds = Table({Name: "Combined 1P (1P + LAL)", Abv: "Combined 1P", AudType: "1P"}, {Name: "1P Cookies (Google Analytics)", Abv: "Cookies", AudType: "1P"}, {Name: "1P Cookies (Floodlights)", Abv: "Cookies", AudType: "1P"}, {Name: "1P Cookies LAL", Abv: "Cookies LAL", AudType: "1P"}, {Name: "1P PII CRM", Abv: "CRM", AudType: "1P"}, {Name: "1P PII CRM LAL", Abv: "CRM LAL", AudType: "1P"}, {Name: "1P Cross Brand", Abv: "Cross Brand", AudType: "1P"}, {Name: "2P LAL", Abv: "2P LAL", AudType: "2P"}, {Name: "2P-Publisher", Abv: "2P-Publisher", AudType: "2P"}, {Name: "2P Retail", Abv: "2P Retail", AudType: "2P"}, {Name: "Affinity Audiences", Abv: "Affinity", AudType: "2P"}, {Name: "Bid Manager Audiences", Abv: "Bid Manager", AudType: "2P"}, {Name: "Category targeting", Abv: "Category", AudType: "2P"}, {Name: "Custom lists (Custom Affinity or Custom Intent)", Abv: "Custom lists", AudType: "2P"}, {Name: "Combined 2P (2P + LAL)", Abv: "Combined 2P", AudType: "2P"}, {Name: "Contextual targeting 2P", Abv: "Contextual 2P", AudType: "2P"}, {Name: "Demographics Audiences", Abv: "Demographics", AudType: "2P"}, {Name: "In-market Audiences", Abv: "In-Market", AudType: "2P"}, {Name: "Keyword targeting", Abv: "Keyword", AudType: "2P"}, {Name: "Life Events audiences", Abv: "Life Events", AudType: "2P"}, {Name: "Viewed any video from a channel", Abv: "YT viewers", AudType: "2P"}, {Name: "Viewed certain videos", Abv: "YT viewers", AudType: "2P"}, {Name: "Viewed any video (as an ad) from a channel", Abv: "YT viewers", AudType: "2P"}, {Name: "Viewed certain videos (as ads)", Abv: "YT viewers", AudType: "2P"}, {Name: "Subscribed to a channel", Abv: "YT susbcribers", AudType: "2P"}, {Name: "Visited a channel homepage", Abv: "YTC visit", AudType: "2P"}, {Name: "Liked any video from a channel", Abv: "YT video like", AudType: "2P"}, {Name: "Added any video from a channel to a playlist", Abv: "YTC add", AudType: "2P"}, {Name: "Shared any video from a channel", Abv: "YTC share", AudType: "2P"}, {Name: "Contextual targeting 3P", Abv: "Contextual 3P", AudType: "3P"}, {Name: "3P Audiences", Abv: "Audiences", AudType: "3P"}, {Name: "3P Custom Audiences", Abv: "Custom", AudType: "3P"}, {Name: "Any audiences built off 3P data", Abv: "Audiences", AudType: "3P"});
+      nfCats = Table({Name: "fragrance", Abv: "frag"}, {Name: "fragrance-women", Abv: "fraw"}, {Name: "fragrance-men", Abv: "fram"}, {Name: "fragrance-home", Abv: "frah"}, {Name: "hair", Abv: "hair"}, {Name: "hair-care", Abv: "haca"}, {Name: "hair-color", Abv: "haco"}, {Name: "hair-texture", Abv: "hate"}, {Name: "hair-styling", Abv: "hast"}, {Name: "hair-tool", Abv: "hato"}, {Name: "hygiene", Abv: "hygi"}, {Name: "hygiene-bath", Abv: "hyba"}, {Name: "hygiene-deodorants", Abv: "hyde"}, {Name: "hygiene-shaving", Abv: "hysh"}, {Name: "hygiene-men", Abv: "hyme"}, {Name: "make-up", Abv: "make"}, {Name: "make-up-eye", Abv: "maky"}, {Name: "make-up-face", Abv: "makf"}, {Name: "make-up-lip", Abv: "makl"}, {Name: "make-up-nail", Abv: "makn"}, {Name: "oral-cosmetics", Abv: "oral"}, {Name: "oral-cosmetics-sundries-cosmetic-devices", Abv: "ocsc"}, {Name: "oral-cosmetics-sundries-oral-cosmetics", Abv: "ocso"}, {Name: "oral-cosmetics-sundries-sundries", Abv: "ocss"}, {Name: "skin-care", Abv: "skin"}, {Name: "skin-care-face-caring", Abv: "skfc"}, {Name: "skin-care-body-caring", Abv: "skbc"}, {Name: "skin-care-face-cleansing", Abv: "skcl"}, {Name: "skin-care-instrumental-cosmetics", Abv: "skic"}, {Name: "skin-care-men", Abv: "skme"}, {Name: "skin-care-sun", Abv: "sksu"}, {Name: "treatment", Abv: "treat"}, {Name: "treatment-face", Abv: "trfc"}, {Name: "treatment-body", Abv: "trbc"}, {Name: "treatment-aftersun", Abv: "tras"}, {Name: "treatment-sun", Abv: "trsu"}, {Name: "treatment-men", Abv: "trme"}, {Name: "baby-care", Abv: "bbca"}, {Name: "multi", Abv: "multi"}, {Name: "all", Abv: "all"}, {Name: "other", Abv: "othr"}, {Name: "branded", Abv: "brde"}, {Name: "brand-purpose", Abv: "brpu"}, {Name: "brand-cause", Abv: "brca"}, {Name: "brand-identity", Abv: "brid"}, {Name: "miscellaneous", Abv: "misc"}, {Name: "services", Abv: "serv"}, {Name: "cosmetic-devices", Abv: "cosde"}, {Name: "CA&E", Abv: "CA&E"}, {Name: "Sustainability", Abv: "Sustainability"});
+    OnStart: |-
+      =ClearCollect(colHolidays, AddColumns(Holidays, HDay, Text(HolidayDate, "yyyy-mm-dd")));
+      Set(varTab, "Mine");
+      Set(varBriefTab, "Campaign")
+    StartScreen: =scrHome
+    Theme: =PowerAppsTheme

@@ -1,0 +1,416 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrDetail:
+    Properties:
+      Fill: =RGBA(247, 248, 251, 1)
+      Height: =Max(App.Height, 560)
+      OnVisible: =Set(varBrief, LookUp(Briefs, ID = varBrief.ID)); Reset(dtChangeWhy); Set(varConfirmDel, false)
+      Width: =Max(App.Width, 1024)
+    Children:
+      - dtHeader:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =Color.White
+            Height: =64
+            Width: =Parent.Width
+      - dtHeaderLine:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =nfGreen
+            Height: =3
+            Width: =Parent.Width
+            Y: =61
+      - dtHeaderMark:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =nfNavy
+            Height: =61
+            Width: =4
+      - dtTitle:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Size: =17
+            Text: ="Brief  ·  " & varBrief.BriefID & "  ·  v" & varBrief.BriefVersion & "  ·  " & varBrief.Status
+            Width: =Parent.Width - 460
+            X: =If(true, 64, 24)
+            Y: =12
+      - dtUser:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            Color: =RGBA(122, 128, 155, 1)
+            Font: =Font.'Segoe UI'
+            Height: =24
+            Size: =10
+            Text: =User().FullName & "  ·  " & nfRole
+            Width: =320
+            X: =Parent.Width - 344
+            Y: =20
+      - dtBack:
+          Control: Classic/Icon@2.5.0
+          Properties:
+            AccessibleLabel: ="Back"
+            Color: =RGBA(16, 20, 61, 1)
+            Height: =32
+            Icon: =Icon.ChevronLeft
+            OnSelect: =Back()
+            Width: =32
+            X: =16
+            Y: =16
+      - dtSumBrand:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =26
+            Text: =varBrief.Brand & "  ·  " & varBrief.Team & "  ·  " & varBrief.AdvertiserName & " (" & varBrief.Advertiser & ")"
+            Width: =Parent.Width - 420
+            Wrap: =false
+            X: =24
+            Y: =76
+      - dtSumLine:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(74, 80, 112, 1)
+            Font: =Font.'Segoe UI'
+            Height: =22
+            Size: =10
+            Text: |-
+              ="Planner " & varBrief.PlannerName &
+              "  ·  Flight " & Text(varBrief.LaunchDate, "dd mmm yy") & " – " & Text(varBrief.EndDate, "dd mmm yy") &
+              "  ·  THB " & Text(varBrief.TotalBudget, "#,##0") &
+              "  ·  " & varBrief.Objective & " / " & varBrief.KPIModel & " " & varBrief.KPITarget &
+              "  ·  " & CountRows(Filter(BriefIOs, BriefID = varBrief.BriefID)) & " IO"
+            Width: =Parent.Width - 420
+            Wrap: =false
+            X: =24
+            Y: =104
+      - dtSumDraft:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(74, 80, 112, 1)
+            Font: =Font.'Segoe UI'
+            Height: =22
+            Size: =10
+            Text: |-
+              =If(IsBlank(varBrief.Notes), "Notes: –", "Notes: " & If(Len(varBrief.Notes) > 180, Left(Substitute(varBrief.Notes, Char(10), " "), 180) & "…", Substitute(varBrief.Notes, Char(10), " ")))
+            Width: =Parent.Width - 420
+            Wrap: =false
+            X: =24
+            Y: =128
+      - dtTax:
+          Control: Label@2.5.1
+          Properties:
+            Color: =nfBlue
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =24
+            Size: =10
+            Text: |-
+              ="Taxonomy: " & Coalesce(varBrief.CampaignTaxonomy, "–") & "  ·  Buyer: " & Coalesce(varBrief.BuyerName, varBrief.BuyerEmail, "unassigned") & If(IsBlank(varBrief.BuyerAcceptedAt), "", " (accepted " & Text(varBrief.BuyerAcceptedAt, "dd mmm hh:mm") & ")") & "  ·  Gate: " & Coalesce(varBrief.GateResult, "–") & If(IsBlank(varBrief.LockedAt), "", "  ·  Locked " & Text(varBrief.LockedAt, "dd mmm hh:mm"))
+            Width: =Parent.Width - 420
+            X: =24
+            Y: =156
+      - dtLHist:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =24
+            Size: =12
+            Text: ="History"
+            Width: =300
+            X: =24
+            Y: =188
+      - dtEvents:
+          Control: Gallery@2.15.0
+          Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
+          Properties:
+            Height: =Parent.Height - 226
+            Items: =Sort(Filter(BriefEvents, BriefID = varBrief.BriefID), ID, SortOrder.Descending)
+            TemplateSize: =48
+            Width: =Parent.Width - 396
+            X: =12
+            Y: =193
+          Children:
+            - dtEvSep:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =RGBA(230, 230, 236, 1)
+                  Height: =1
+                  Width: =Parent.TemplateWidth
+                  Y: =Parent.TemplateHeight - 1
+            - dtEvA:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(16, 20, 61, 1)
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =22
+                  Size: =10
+                  Text: =Text(ThisItem.At, "dd mmm yy hh:mm") & "  ·  " & ThisItem.Event & "  ·  " & ThisItem.ByEmail
+                  Width: =Parent.TemplateWidth - 24
+                  X: =12
+                  Y: =2
+            - dtEvB:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(74, 80, 112, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  Size: =9
+                  Text: =ThisItem.Detail
+                  Width: =Parent.TemplateWidth - 24
+                  X: =12
+                  Y: =24
+      - dtPanel:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =RGBA(241, 243, 248, 1)
+            Height: =Parent.Height - 64
+            Width: =372
+            X: =Parent.Width - 372
+            Y: =64
+      - dtPTitle:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(16, 20, 61, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =28
+            Size: =14
+            Text: ="Actions"
+            Width: =330
+            X: =Parent.Width - 352
+            Y: =76
+      - dtAccept:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =RGBA(16, 20, 61, 1)
+            Fill: =RGBA(255, 170, 40, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: |-
+              =With(
+                  {prev: varBrief.BuyerEmail},
+                  Set(varBrief, Patch(Briefs, varBrief, {Status: "In set-up", BuyerEmail: nfMeEmail, BuyerName: User().FullName, BuyerAcceptedAt: Now()}));
+                  Patch(BriefEvents, Defaults(BriefEvents), {BriefID: varBrief.BriefID, Event: "Buyer accepted the set-up", ByEmail: nfMeEmail, At: Now(), Detail: If(!IsBlank(prev) && prev <> nfMeEmail, "Taken over from " & prev, "")})
+              );
+              Notify("You have this set-up now", NotificationType.Success)
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =11
+            Text: ="Accept this set-up"
+            Visible: =varBrief.Status = "Locked" && nfIsGate
+            Width: =330
+            X: =Parent.Width - 352
+            Y: =112
+      - dtSetUp:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =Color.White
+            Fill: =RGBA(21, 128, 61, 1)
+            Font: =Font.'Segoe UI'
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: |-
+              =Set(varBrief, Patch(Briefs, varBrief, {Status: "Set up", SetupDoneAt: Now()}));
+              Patch(BriefEvents, Defaults(BriefEvents), {BriefID: varBrief.BriefID, Event: "Set up in DV360", ByEmail: nfMeEmail, At: Now(), Detail: ""});
+              Notify("Marked as set up", NotificationType.Success)
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =11
+            Text: ="Mark as set up in DV360"
+            Visible: =varBrief.Status = "In set-up" && (varBrief.BuyerEmail = nfMeEmail || nfRole = "Admin")
+            Width: =330
+            X: =Parent.Width - 352
+            Y: =112
+      - dtTakeOver:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =RGBA(16, 20, 61, 1)
+            Fill: =RGBA(255, 170, 40, 1)
+            Font: =Font.'Segoe UI'
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: |-
+              =Set(varBrief, Patch(Briefs, varBrief, {BuyerEmail: nfMeEmail, BuyerName: User().FullName, BuyerAcceptedAt: Now()}));
+              Patch(BriefEvents, Defaults(BriefEvents), {BriefID: varBrief.BriefID, Event: "Buyer took over the set-up", ByEmail: nfMeEmail, At: Now(), Detail: ""});
+              Notify("You have this set-up now", NotificationType.Success)
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =11
+            Text: ="Take over this set-up"
+            Visible: =varBrief.Status = "In set-up" && nfIsGate && varBrief.BuyerEmail <> nfMeEmail && nfRole <> "Admin"
+            Width: =330
+            X: =Parent.Width - 352
+            Y: =112
+      - dtLChange:
+          Control: Label@2.5.1
+          Properties:
+            Color: =nfBlue
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =20
+            Size: =10
+            Text: ="Request a change after Lock"
+            Visible: =varBrief.Status in ["Locked", "In set-up", "Set up"]
+            Width: =330
+            X: =Parent.Width - 352
+            Y: =172
+      - dtChangeType:
+          Control: Classic/DropDown@2.3.1
+          Properties:
+            Font: =Font.'Segoe UI'
+            Height: =36
+            Items: |-
+              =["Major: budget, audience, flight, KPI, buying type or test design", "Minor: same-spec creative swap or landing URL fix"]
+            Items.Value: =Value
+            Size: =9
+            Visible: =varBrief.Status in ["Locked", "In set-up", "Set up"]
+            Width: =330
+            X: =Parent.Width - 352
+            Y: =194
+      - dtChangeWhy:
+          Control: Classic/TextInput@2.3.2
+          Properties:
+            BorderColor: =RGBA(203, 208, 222, 1)
+            Default: =""
+            Font: =Font.'Segoe UI'
+            Height: =60
+            HintText: ="What changes and why"
+            Mode: =TextMode.MultiLine
+            Size: =10
+            Visible: =varBrief.Status in ["Locked", "In set-up", "Set up"]
+            Width: =330
+            X: =Parent.Width - 352
+            Y: =236
+      - dtChange:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =Color.White
+            DisplayMode: =If(IsBlank(dtChangeWhy.Text), DisplayMode.Disabled, DisplayMode.Edit)
+            Fill: =nfBlue
+            Font: =Font.'Segoe UI'
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: |-
+              =If(
+                  StartsWith(dtChangeType.Selected.Value, "Major"),
+                  Set(
+                      varBrief,
+                      Patch(
+                          Briefs,
+                          varBrief,
+                          {
+                              Status: "Draft",
+                              BriefVersion: varBrief.BriefVersion + 1,
+                              RevisionsMajor: varBrief.RevisionsMajor + 1,
+                              GateAttempts: 0,
+                              PassedFirstTime: Blank(),
+                              GateResult: Blank(),
+                              GateGaps: ""
+                          }
+                      )
+                  );
+                  Patch(BriefEvents, Defaults(BriefEvents), {BriefID: varBrief.BriefID, Event: "Major change: new brief version " & varBrief.BriefVersion, ByEmail: nfMeEmail, At: Now(), Detail: dtChangeWhy.Text});
+                  If(nfSendEmails, IfError(Office365Outlook.SendEmailV2(Concat(Filter(DeskTeam, Role = "Ad Ops" || Role = "Gatekeeper"), Email, ";") & ";" & varBrief.BuyerEmail, "Major change, brief reopened: " & varBrief.BriefID, "A locked brief was reopened as a new version. SLA restarts after the Gate. Reason: " & dtChangeWhy.Text), Notify("Saved, but the email was not sent", NotificationType.Warning)));
+                  Set(varBriefTab, "Campaign");
+                  Navigate(scrBrief, ScreenTransition.None),
+                  Set(varBrief, Patch(Briefs, varBrief, {RevisionsMinor: varBrief.RevisionsMinor + 1}));
+                  Patch(BriefEvents, Defaults(BriefEvents), {BriefID: varBrief.BriefID, Event: "Minor change", ByEmail: nfMeEmail, At: Now(), Detail: dtChangeWhy.Text});
+                  If(nfSendEmails, IfError(Office365Outlook.SendEmailV2(varBrief.BuyerEmail, "Minor change: " & varBrief.BriefID, "Minor change requested (no new brief): " & dtChangeWhy.Text), Notify("Saved, but the email was not sent", NotificationType.Warning)));
+                  Reset(dtChangeWhy);
+                  Notify("Minor change logged and sent to the buyer", NotificationType.Success)
+              )
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =11
+            Text: ="Log change"
+            Visible: =varBrief.Status in ["Locked", "In set-up", "Set up"] && (varBrief.PlannerEmail = nfMeEmail || nfRole = "Admin")
+            Width: =330
+            X: =Parent.Width - 352
+            Y: =302
+      - dtNamingFix:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =Color.White
+            Fill: =RGBA(120, 90, 200, 1)
+            Font: =Font.'Segoe UI'
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: |-
+              =Set(varBrief, Patch(Briefs, varBrief, {PostLaunchNamingFixes: varBrief.PostLaunchNamingFixes + 1}));
+              Patch(BriefEvents, Defaults(BriefEvents), {BriefID: varBrief.BriefID, Event: "Naming fix after launch", ByEmail: nfMeEmail, At: Now(), Detail: dtChangeWhy.Text});
+              Notify("Naming fix logged against Ad Ops", NotificationType.Success)
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =11
+            Text: ="Log naming fix after launch"
+            Visible: =varBrief.Status = "Set up" && (nfIsGate || nfIsAdOps)
+            Width: =330
+            X: =Parent.Width - 352
+            Y: =362
+      - dtCancel:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(200, 40, 40, 1)
+            BorderThickness: =1
+            Color: =If(varConfirmDel, Color.White, RGBA(200, 40, 40, 1))
+            Fill: =If(varConfirmDel, RGBA(200, 40, 40, 1), RGBA(255, 255, 255, 1))
+            Font: =Font.'Segoe UI'
+            HoverFill: =ColorFade(Self.Fill, -15%)
+            OnSelect: |-
+              =If(
+                  !varConfirmDel,
+                  Set(varConfirmDel, true),
+                  Set(varConfirmDel, false);
+                  If(
+                      IsBlank(varBrief.SubmittedAt),
+                      RemoveIf(BriefAds, BriefID = varBrief.BriefID);
+                      RemoveIf(BriefAdGroups, BriefID = varBrief.BriefID);
+                      RemoveIf(BriefLines, BriefID = varBrief.BriefID);
+                      RemoveIf(BriefIOs, BriefID = varBrief.BriefID);
+                      RemoveIf(BriefEvents, BriefID = varBrief.BriefID);
+                      Remove(Briefs, LookUp(Briefs, ID = varBrief.ID));
+                      Notify("Draft deleted", NotificationType.Success),
+                      Set(varBrief, Patch(Briefs, varBrief, {Status: "Cancelled"}));
+                      Patch(BriefEvents, Defaults(BriefEvents), {BriefID: varBrief.BriefID, Event: "Brief cancelled", ByEmail: nfMeEmail, At: Now(), Detail: ""});
+                      Notify("Brief cancelled", NotificationType.Success)
+                  );
+                  Navigate(scrHome, ScreenTransition.None)
+              )
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =11
+            Text: =If(varConfirmDel, "Click again to confirm", If(IsBlank(varBrief.SubmittedAt), "Delete draft", "Cancel brief"))
+            Visible: =varBrief.Status in ["Draft", "Returned", "With Ad Ops", "With Gatekeeper", "Locked", "In set-up"] && (varBrief.PlannerEmail = nfMeEmail || nfRole = "Admin")
+            Width: =330
+            X: =Parent.Width - 352
+            Y: =Parent.Height - 60
