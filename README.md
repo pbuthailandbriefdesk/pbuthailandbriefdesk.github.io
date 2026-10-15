@@ -4,7 +4,9 @@ The programmatic brief workflow for L'Oréal Thailand: **Planner → Ad Ops → 
 It replaces the Power Apps canvas app *L'Oréal Brief Desk* and its SharePoint lists on
 `sites/programmaticcampaignbriefth`. The data and rules are the same; the interface follows the WPP Media design system.
 
-- **Front end:** static site (Preact + htm from a CDN, no build step), hosted on GitHub Pages.
+**Live:** https://warintornnakhowong-eng.github.io/loreal-brief-desk/
+
+- **Front end:** static site (Preact + htm from a CDN, no build step), hosted on GitHub Pages from `main`.
 - **Back end:** Supabase (Postgres, email sign-in, row level security).
 
 ## What carried over
