@@ -34,7 +34,7 @@ export function Gate({ route }) {
     <//>
     ${!canWork && html`<div class="callout warn" style="margin-bottom:18px">This brief is <strong>${b.status}</strong>${me.isGate ? '' : ' and your role cannot run the Gate'}. The Gate decisions are switched off.</div>`}
 
-    <div class="split">
+    <div class="split aside-first">
       <div class="stack">
         <${BriefSummary} st=${st} extra=${html`<div class="small" style="margin-top:12px">
           <span class="label">Taxonomy </span><span class="mono">${coalesce(b.campaign_taxonomy, '–')}</span>

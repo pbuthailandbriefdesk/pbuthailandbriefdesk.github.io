@@ -81,7 +81,8 @@ export function Home({ route }) {
         ${tab === 'Mine' && html`<div>Start with <a href="#" onClick=${(e) => { e.preventDefault(); newBrief(); }}>a new brief</a>.</div>`}
       </div></div>` : html`
     <div class="table-wrap">
-      <table class="table">
+      <table class="table briefs">
+        <colgroup><col style="width:170px" /><col /><col style="width:170px" /><col style="width:130px" /><col style="width:150px" /><col style="width:150px" /><col style="width:140px" /></colgroup>
         <thead><tr>
           <th>ID / brand</th><th>Campaign</th><th>Flight</th><th class="num">Budget</th><th>Planner</th><th>Buyer</th><th>Status</th>
         </tr></thead>
@@ -89,7 +90,9 @@ export function Home({ route }) {
           ${rows.map((b) => html`<tr class="clickable" onClick=${() => go(briefPath(b.brief_id))}
               tabindex="0" onKeyDown=${(e) => { if (e.key === 'Enter') go(briefPath(b.brief_id)); }}>
             <td><div class="id">${b.brief_id}</div><div class="sub">${coalesce(b.brand, '—')}  ·  ${coalesce(b.team, '—')}</div></td>
-            <td class="camp">${coalesce(b.campaign_taxonomy, b.campaign_name) || html`<span class="faint">(no name yet)</span>`}
+            <td class="camp">${coalesce(b.campaign_taxonomy, b.campaign_name)
+              ? html`<div class="clamp2 mono" title=${coalesce(b.campaign_taxonomy, b.campaign_name)}>${coalesce(b.campaign_taxonomy, b.campaign_name)}</div>`
+              : html`<span class="faint">(no name yet)</span>`}
               ${b.brief_type && b.brief_type !== 'New' && html`<div class="sub">${b.brief_type} brief</div>`}</td>
             <td class="nowrap">${isBlank(b.launch_date) ? html`<span class="faint">–</span>` : html`${fmtDate(b.launch_date)} – ${fmtDate(b.end_date)}`}</td>
             <td class="num">${isBlank(b.total_budget) ? html`<span class="faint">–</span>` : `THB ${fmtInt(b.total_budget)}`}</td>

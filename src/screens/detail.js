@@ -91,7 +91,7 @@ export function Detail({ route }) {
               ${show.namingFix && html`<${ActionButton} cls="btn" onClick=${async () => { await logNamingFix(store, why); setWhy(''); }}>Log naming fix after launch<//>`}
             </div>`}
 
-            ${show.cancel && html`<div style="border-top:1px solid var(--rule);padding-top:14px">
+            ${show.cancel && html`<div style=${show.accept || show.setUp || show.takeOver || (locked && (show.change || show.namingFix)) ? 'border-top:1px solid var(--rule);padding-top:14px' : ''}>
               <${ConfirmButton} label=${isBlank(b.submitted_at) ? 'Delete draft' : 'Cancel brief'}
                 onConfirm=${async () => { await deleteOrCancel(store); await loadBriefs(); go('#/'); }} />
             </div>`}

@@ -64,15 +64,15 @@ export function AdOps({ route }) {
     <//>
     ${!canWork && html`<div class="callout warn" style="margin-bottom:18px">This brief is <strong>${b.status}</strong>${me.isAdOps ? '' : ' and you are not in Ad Ops'}. You can look, but hand-over is only for briefs with Ad Ops.</div>`}
 
-    <div class="split">
+    <div class="split aside-first">
       <div class="stack">
         <${BriefSummary} st=${st} />
 
         <div class="card"><div class="card-body">
           <h2 class="section-title">Campaign name (L'Oréal taxonomy)</h2>
           <${TextInput} mono value=${coalesce(b.campaign_taxonomy, b.campaign_name)} onSave=${(v) => store.patchBrief({ campaign_taxonomy: v })} />
-          <div class="ao-row"><div class="sug">Suggested: <code class="code-chip">${sugCamp}</code>
-            ${sugCamp !== b.campaign_taxonomy && html`<button class="btn btn-sm" onClick=${() => store.patchBrief({ campaign_taxonomy: sugCamp })}>Use</button>`}</div></div>
+          <div class="sug">Suggested: <code class="code-chip">${sugCamp}</code>
+            ${sugCamp !== b.campaign_taxonomy && html`<button class="btn btn-sm" onClick=${() => store.patchBrief({ campaign_taxonomy: sugCamp })}>Use</button>`}</div>
         </div></div>
 
         <div class="card">
@@ -84,25 +84,23 @@ export function AdOps({ route }) {
             </div>
           </div>
           ${rows.length === 0 ? html`<div class="empty">${todo ? 'Nothing left to fix.' : 'No structure in this brief.'}</div>` : html`
-          <div class="table-wrap" style="border:none"><table class="table">
-            <thead><tr><th style="width:38%">Item</th><th>Name</th><th style="width:130px">Action</th><th style="width:170px">DV360 ID</th></tr></thead>
-            <tbody>${rows.map((r) => html`<tr class="ao-row" key=${r.table + r.rec.id}>
-              <td style=${`padding-left:${14 + r.indent * 16}px`}>
-                <div class="row" style="gap:8px;flex-wrap:nowrap;align-items:flex-start">
-                  <span class=${`lvl ${r.lvl === 'AD' && num(r.ag_no) === 0 ? 'CR' : r.lvl}`}>${r.lvl === 'AD' && num(r.ag_no) === 0 ? 'CR' : r.lvl}</span>
-                  <span class="small" style="word-break:break-word">${singleLine(r.label)}</span>
-                </div>
-              </td>
-              <td>
+          <div class="ao-list">${rows.map((r) => html`<div class=${`ao-item ${r.lvl}${needsFix(r) ? ' fix' : ''}`} key=${r.table + r.rec.id}
+              style=${`padding-left:${16 + r.indent * 20}px`}>
+            <div class="ao-label">
+              <span class=${`lvl ${r.lvl === 'AD' && num(r.ag_no) === 0 ? 'CR' : r.lvl}`}>${r.lvl === 'AD' && num(r.ag_no) === 0 ? 'CR' : r.lvl}</span>
+              <span>${singleLine(r.label)}</span>
+            </div>
+            <div class="ao-controls">
+              <div class="field"><label>Name</label>
                 <${TextInput} mono value=${r.nm} onSave=${(v) => patch(r, { [r.nameField]: v })} />
-                ${r.sug !== r.nm && html`<div class="sug"><code>${r.sug}</code>
+                ${r.sug !== r.nm && html`<div class="sug"><span class="faint">Suggested</span> <code>${r.sug}</code>
                   <button class="btn btn-sm" onClick=${() => patch(r, { [r.nameField]: r.sug })}>Use</button></div>`}
-              </td>
-              <td><${Select} value=${r.act} options=${OPT.action} onSave=${(v) => patch(r, { action: v })} /></td>
-              <td><${TextInput} mono value=${r.dvId} placeholder=${['Update', 'Pause', 'No change'].includes(r.act) ? 'Required' : ''}
-                onSave=${(v) => patch(r, { dv360_id: v })} /></td>
-            </tr>`)}</tbody>
-          </table></div>`}
+              </div>
+              <div class="field"><label>Action</label><${Select} value=${r.act} options=${OPT.action} onSave=${(v) => patch(r, { action: v })} /></div>
+              <div class="field"><label>DV360 ID</label><${TextInput} mono value=${r.dvId}
+                placeholder=${['Update', 'Pause', 'No change'].includes(r.act) ? 'Required' : ''} onSave=${(v) => patch(r, { dv360_id: v })} /></div>
+            </div>
+          </div>`)}</div>`}
         </div>
       </div>
 

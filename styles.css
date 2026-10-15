@@ -320,7 +320,9 @@ a.tile:hover { border-color: var(--wpp-navy); }
 .table tr.clickable:hover td { background: var(--surface-2); }
 .table .id { font-weight: 700; white-space: nowrap; }
 .table .sub { font-size: 12px; color: var(--ink-muted); margin-top: 3px; }
-.table .camp { max-width: 420px; word-break: break-word; }
+.table.briefs { min-width: 1040px; table-layout: fixed; }
+.table .camp { word-break: break-all; }
+.clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .table td.num, .table th.num { text-align: right; white-space: nowrap; }
 
 .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -405,10 +407,16 @@ a.tile:hover { border-color: var(--wpp-navy); }
 .orow.l1 { padding-left: 38px; } .orow.l2 { padding-left: 62px; } .orow.l3 { padding-left: 86px; }
 .orow.IO { background: var(--surface-2); }
 
-/* Ad Ops table */
-.ao-row td { vertical-align: middle; }
-.ao-row .sug { font-size: 12px; color: var(--ink-muted); margin-top: 4px; display: flex; gap: 8px; align-items: center; }
-.ao-row .sug code { font-size: 11px; word-break: break-all; }
+/* Ad Ops list */
+.ao-item { padding: 14px 18px; border-bottom: 1px solid var(--rule); border-left: 3px solid transparent; }
+.ao-item:last-child { border-bottom: none; }
+.ao-item.IO { background: var(--surface-2); }
+.ao-item.fix { border-left-color: var(--danger); }
+.ao-label { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; font-weight: 700; margin-bottom: 10px; word-break: break-word; }
+.ao-controls { display: grid; grid-template-columns: minmax(0, 1fr) 140px 170px; gap: 12px; align-items: start; }
+.sug { font-size: 12px; color: var(--ink-muted); margin-top: 6px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.sug code { font-size: 11px; word-break: break-all; }
+@media (max-width: 700px) { .ao-controls { grid-template-columns: 1fr 1fr; } .ao-controls > .field:first-child { grid-column: 1 / -1; } }
 
 /* ---------------------------------------------------------------- Timeline */
 .timeline { list-style: none; margin: 0; padding: 0 0 0 18px; border-left: 1px solid var(--rule-strong); }
@@ -478,6 +486,7 @@ a.tile:hover { border-color: var(--wpp-navy); }
 @media (max-width: 1180px) {
   .split { grid-template-columns: 1fr; }
   .split > aside { position: static; }
+  .split.aside-first > aside { order: -1; }
   .g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 900px) {
@@ -502,5 +511,4 @@ a.tile:hover { border-color: var(--wpp-navy); }
   .signin .art h1 { font-size: 36px; }
   .signin .form { padding: 28px 20px; }
   .popover { width: calc(100vw - 32px); right: -60px; }
-  .table .camp { max-width: 260px; }
 }
