@@ -46,7 +46,8 @@ Open http://localhost:5173 and pick a desk team member. Admin → **Reset demo d
 ## Set up Supabase
 
 1. Create a project at supabase.com (region: Southeast Asia / Singapore).
-2. **SQL editor:** run `supabase/migrations/001_schema.sql`.
+2. **SQL editor:** run `supabase/migrations/001_schema.sql`, then `002_api_grants.sql` (newer projects don't expose new tables to the API until they are granted).
+   If Supabase warns "creates tables without enabling Row Level Security", choose **Run without RLS**: the script turns RLS on itself.
 3. Load the data. In the SQL editor run the files in `supabase/seed/` in order, `01_desk_team.sql` to `10_brief_ads.sql`.
    These files are not in git. To recreate them from a fresh SharePoint export, save it as `data/sharepoint_export.json` and run
    `powershell -ExecutionPolicy Bypass -File scripts/convert-export.ps1`.
