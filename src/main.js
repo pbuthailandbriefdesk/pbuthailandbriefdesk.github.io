@@ -67,45 +67,33 @@ async function refreshSession() {
 
 // ---------------------------------------------------------------------------
 function SignIn() {
-  const { db: d, authError, team } = useStore(app);
+  const { db: d, authError } = useStore(app);
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
-  const [sent, setSent] = useState(false);
-  const [code, setCode] = useState('');
+  const [role, setRole] = useState('Planner');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
-  // No sign-in in either mode: people pick their name (see 003_open_access.sql).
-  const demo = true;
-  const [demoTeam, setDemoTeam] = useState([]);
-  useEffect(() => { d.list('desk_team').then(setDemoTeam).catch(() => setDemoTeam([])); }, []);
+  const [team, setTeam] = useState([]);
+  useEffect(() => { d.list('desk_team').then(setTeam).catch(() => setTeam([])); }, []);
+
+  // Known desk-team emails fill in their name and role (both can still be changed).
+  const onEmail = (v) => {
+    setEmail(v);
+    const row = team.find((t) => lower(t.email) === lower(v.trim()));
+    if (row) {
+      if (row.name) setName(row.name);
+      if (ROLE_CHOICES.some((r) => r.value === row.role)) setRole(row.role);
+    }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
     const em = email.trim().toLowerCase();
     if (!ALLOWED_DOMAINS.includes(em.split('@')[1])) { setErr(`Use your ${ALLOWED_DOMAINS.map((x) => '@' + x).join(' or ')} address.`); return; }
+    if (!name.trim()) { setErr('Enter your name.'); return; }
     setErr(null);
     setBusy(true);
-    try {
-      await d.signIn(em, name.trim());
-      if (!demo) { setSent(true); setCode(''); }
-    } catch (ex) {
-      setErr(/rate limit/i.test(ex.message)
-        ? 'Too many sign-in emails were sent recently. Wait a few minutes, then try again.'
-        : ex.message);
-    } finally { setBusy(false); }
-  };
-
-  const verify = async (e) => {
-    e.preventDefault();
-    const c = code.replace(/\s/g, '');
-    if (!/^\d{6,10}$/.test(c)) { setErr('Enter the number code from the email.'); return; }
-    setErr(null);
-    setBusy(true);
-    try {
-      await d.verifyCode(email.trim().toLowerCase(), c);
-    } catch (ex) {
-      setErr(/expired|invalid/i.test(ex.message) ? 'That code is wrong or has expired. Check the latest email, or send a new one.' : ex.message);
-    } finally { setBusy(false); }
+    try { await d.signIn(em, name.trim(), role); } catch (ex) { setErr(ex.message); } finally { setBusy(false); }
   };
 
   return html`<div class="signin">
@@ -118,44 +106,35 @@ function SignIn() {
       <div class="small" style="color:rgba(255,255,255,.6)">Planner → Ad Ops → Gate → Buyer</div>
     </div>
     <div class="form">
-      ${sent ? html`
-        <div class="eyebrow muted"><span class="dot"></span>Check your inbox</div>
-        <h2>Enter your sign-in code</h2>
-        <p class="muted">We emailed a code to <strong>${email}</strong>. Type it here. It can take a minute to arrive.</p>
-        <form onSubmit=${verify} class="stack" style="gap:12px">
-          <div class="field"><label for="code">Code from the email</label>
-            <input id="code" class="input mono" inputmode="numeric" autocomplete="one-time-code" placeholder="123456"
-              style="font-size:20px;letter-spacing:4px;height:48px" value=${code} onInput=${(e) => setCode(e.currentTarget.value)} /></div>
-          ${err && html`<div class="callout err">${err}</div>`}
-          <div><button class="btn btn-primary btn-lg btn-arrow" type="submit" disabled=${busy}>${busy ? 'Checking…' : 'Sign in'}</button></div>
-        </form>
-        <div class="row small" style="margin-top:18px">
-          <button class="btn btn-sm" disabled=${busy} onClick=${submit}>Send a new code</button>
-          <button class="btn btn-sm btn-ghost" onClick=${() => { setSent(false); setErr(null); }}>Use a different address</button>
+      <div class="eyebrow muted"><span class="dot"></span>${d.mode === 'demo' ? 'Demo mode' : 'Welcome'}</div>
+      <h2>Tell us who you are</h2>
+      <p class="muted">${d.mode === 'demo' ? 'Demo data in this browser only. ' : ''}Your name and role go on the briefs you work on and in the history log.</p>
+      <form onSubmit=${submit} class="stack" style="gap:14px">
+        <div class="field"><label for="em">Work email</label>
+          <input id="em" class="input" type="email" required placeholder="name@wppmedia.com" value=${email} onInput=${(e) => onEmail(e.currentTarget.value)} /></div>
+        <div class="field"><label for="nm">Your name</label>
+          <input id="nm" class="input" required placeholder="First Last" value=${name} onInput=${(e) => setName(e.currentTarget.value)} /></div>
+        <div class="field"><label>Role</label>
+          <div class="seg" role="radiogroup" aria-label="Role" style="flex-wrap:wrap">
+            ${ROLE_CHOICES.map((r) => html`<button type="button" role="radio" aria-checked=${role === r.value}
+              class=${role === r.value ? 'on' : ''} onClick=${() => setRole(r.value)}>${r.label}</button>`)}
+          </div>
+          <div class="hint">${ROLE_CHOICES.find((r) => r.value === role).hint}</div>
         </div>
-      ` : html`
-        <div class="eyebrow muted"><span class="dot"></span>${demo ? 'Demo mode' : 'Sign in'}</div>
-        <h2>${demo ? 'Choose who you are' : 'Sign in with your work email'}</h2>
-        <p class="muted">${demo
-          ? (d.mode === 'demo' ? 'Demo data in this browser only. ' : '') + 'Pick your name to continue.'
-          : "We'll email you a sign-in code. Only @wppmedia.com addresses can sign in."}</p>
-        ${demo && html`<div class="stack" style="gap:8px;margin:8px 0 20px">
-          ${demoTeam.map((t) => html`<button class="btn" style="justify-content:space-between" onClick=${() => d.signIn(t.email.toLowerCase(), t.name)}>
-            <span>${t.name}</span><span class="muted small">${t.role}</span></button>`)}
-          <div class="small muted" style="margin-top:8px">Or sign in as someone else (they get the Planner role):</div>
-        </div>`}
-        <form onSubmit=${submit} class="stack" style="gap:12px">
-          <div class="field"><label for="em">Work email</label>
-            <input id="em" class="input" type="email" required placeholder="name@wppmedia.com" value=${email} onInput=${(e) => setEmail(e.currentTarget.value)} /></div>
-          ${demo && html`<div class="field"><label for="nm">Your name</label>
-            <input id="nm" class="input" placeholder="First Last" value=${name} onInput=${(e) => setName(e.currentTarget.value)} /></div>`}
-          ${(err || authError) && html`<div class="callout err">${err || authError}</div>`}
-          <div><button class="btn btn-primary btn-lg btn-arrow" type="submit" disabled=${busy}>${demo ? 'Continue' : busy ? 'Sending…' : 'Email me a code'}</button></div>
-        </form>
-      `}
+        ${(err || authError) && html`<div class="callout err">${err || authError}</div>`}
+        <div><button class="btn btn-primary btn-lg btn-arrow" type="submit" disabled=${busy}>Continue</button></div>
+      </form>
     </div>
   </div>`;
 }
+
+const ROLE_CHOICES = [
+  { value: 'Planner', label: 'Planner', hint: 'Create and submit briefs, request changes.' },
+  { value: 'Ad Ops', label: 'Ad Ops', hint: 'Taxonomy, actions and DV360 IDs, SDF export.' },
+  { value: 'Gatekeeper', label: 'Gate', hint: 'Run the 14-item Gate check, lock or return briefs.' },
+  { value: 'Buyer', label: 'Buyer', hint: 'Accept locked briefs and mark them set up in DV360.' },
+  { value: 'Admin', label: 'Admin', hint: 'Everything, plus the Admin page and test mode.' },
+];
 
 function NamePrompt() {
   const { db: d, me } = useStore(app);
@@ -246,7 +225,7 @@ function Sidebar({ route }) {
     <div class="sidebar-foot">
       <div class="who">${me.name}</div>
       <div class="role">${me.role}${me.team ? ` · ${me.team}` : ''}</div>
-      <button onClick=${() => d.signOut()}>Sign out</button>
+      <button onClick=${() => d.signOut()}>Change name / role</button>
       ${d.mode === 'demo' && html`<div><span class="demo-badge">Demo data · this browser only</span></div>`}
     </div>
   </aside>`;

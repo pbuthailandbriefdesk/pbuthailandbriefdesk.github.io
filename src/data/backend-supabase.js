@@ -33,8 +33,8 @@ export function createSupabaseBackend() {
 
     async session() { return who; },
     onAuthChange(cb) { listeners.push(cb); },
-    async signIn(email, fullName = '') {
-      who = { email, fullName };
+    async signIn(email, fullName = '', role = null) {
+      who = { email, fullName, role };
       store.set(who);
       listeners.forEach((f) => f());
     },

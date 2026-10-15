@@ -35,8 +35,8 @@ export async function createDemoBackend() {
       return raw ? JSON.parse(raw) : null;
     },
     onAuthChange(cb) { listeners.push(cb); },
-    async signIn(email, fullName = '') {
-      store.set(WHO, JSON.stringify({ email, fullName }));
+    async signIn(email, fullName = '', role = null) {
+      store.set(WHO, JSON.stringify({ email, fullName, role }));
       listeners.forEach((f) => f());
     },
     async signOut() { store.del(WHO); listeners.forEach((f) => f()); },

@@ -48,7 +48,7 @@ export function useCrumbs(list) {
 export function profileFor(session, team) {
   const email = lower(session.email);
   const row = team.find((t) => lower(t.email) === email);
-  const role = row?.role || 'Planner';
+  const role = session.role || row?.role || 'Planner'; // role chosen on the entry screen wins
   return {
     email,
     name: session.fullName || row?.name || email,
