@@ -4,7 +4,7 @@ The programmatic brief workflow for L'Oréal Thailand: **Planner → Ad Ops → 
 It replaces the Power Apps canvas app *L'Oréal Brief Desk* and its SharePoint lists on
 `sites/programmaticcampaignbriefth`. The data and rules are the same; the interface follows the WPP Media design system.
 
-**Live:** https://scaling-guide-lk89ygq.pages.github.io/ (private GitHub Pages of [WPPOpen/wppmedia-th-pbu-briefdesk](https://github.com/WPPOpen/wppmedia-th-pbu-briefdesk); sign in to GitHub with your WPP account to open it)
+**Live:** https://pbuthailandbriefdesk.github.io/ (repo [pbuthailandbriefdesk/pbuthailandbriefdesk.github.io](https://github.com/pbuthailandbriefdesk/pbuthailandbriefdesk.github.io), GitHub Pages from `main`)
 
 > **No sign-in (open access).** People pick their name on the first screen; nothing checks who they are.
 > Anyone who has the link can read and change every brief, budget and PO number.
