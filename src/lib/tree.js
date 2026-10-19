@@ -53,5 +53,5 @@ export function buildRows(b, I, L, G, A, brands) {
 export const rowKey = (r) =>
   r.lvl === 'IO' ? `IO${r.io_no}` : r.lvl === 'LI' ? `LI${r.io_no}.${r.line_no}` : r.lvl === 'AG' ? `AG${r.io_no}.${r.line_no}.${r.ag_no}` : '';
 
-export const needsFix = (r) =>
-  isBlank(r.nm) || isBlank(r.act) || (['Update', 'Pause', 'No change'].includes(r.act) && isBlank(r.dvId));
+// What Ad Ops must finish on a row: a name and an action (DV360 IDs come later, from the Buyer).
+export const needsFix = (r) => isBlank(r.nm) || isBlank(r.act);

@@ -41,7 +41,7 @@ const LISTS = {
 export function Admin({ route }) {
   const s = useStore(app);
   const tab = route.query.tab || 'users';
-  useCrumbs([{ label: 'Admin', href: '#/admin' }, { label: tab === 'users' ? 'User management' : LISTS[tab]?.label || 'Reference lists' }]);
+  useCrumbs([{ label: 'Admin', href: '#/admin' }, { label: tab === 'users' ? 'User management' : tab === 'dv360' ? 'DV360 campaigns' : LISTS[tab]?.label || 'Reference lists' }]);
   if (!s.me.isAdmin) return html`<div class="page"><div class="callout err">Only Admins can open this page.</div></div>`;
 
   return html`<div class="page">
@@ -52,9 +52,10 @@ export function Admin({ route }) {
     <//>
     <div class="tabs">
       <a class=${`tablink${tab === 'users' ? ' on' : ''}`} href="#/admin">Users (${s.team.length})</a>
+      <a class=${`tablink${tab === 'dv360' ? ' on' : ''}`} href="#/admin?tab=dv360">DV360 campaigns (${s.dv360.length})</a>
       ${Object.entries(LISTS).map(([k, v]) => html`<a class=${`tablink${tab === k ? ' on' : ''}`} href=${`#/admin?tab=${k}`}>${v.label} (${s[v.key].length})</a>`)}
     </div>
-    ${tab === 'users' ? html`<${Users} />` : LISTS[tab] ? html`<${RefList} table=${tab} />` : null}
+    ${tab === 'users' ? html`<${Users} />` : tab === 'dv360' ? html`<${Dv360Campaigns} />` : LISTS[tab] ? html`<${RefList} table=${tab} />` : null}
   </div>`;
 }
 
@@ -183,5 +184,88 @@ function RefList({ table }) {
         </tr>`)}
       </tbody>
     </table></div>
+  </div>`;
+}
+
+// ---------------------------------------------------------------------------
+// DV360 campaigns per advertiser, pasted from a DV360 export. Briefs use this list to
+// pick their DV360 Campaign ID from the advertiser (ui/campaign.js).
+function Dv360Campaigns() {
+  const { brands, dv360 } = useStore(app);
+  const advertisers = [...new Map(brands.filter((b) => b.advertiser_id).map((b) => [String(b.advertiser_id), b])).values()]
+    .sort((a, b) => (a.brand_name || '').localeCompare(b.brand_name || ''));
+  const [adv, setAdv] = useState(advertisers[0] ? String(advertisers[0].advertiser_id) : '');
+  const [paste, setPaste] = useState('');
+  const [busy, setBusy] = useState(false);
+  const advName = (id) => {
+    const names = brands.filter((b) => String(b.advertiser_id) === String(id)).map((b) => b.brand_name);
+    return names.length ? names.join(' / ') : id;
+  };
+  const rows = dv360.filter((c) => !adv || String(c.advertiser_id) === adv).sort((a, b) => (a.campaign_name || '').localeCompare(b.campaign_name || ''));
+
+  // Each line: a Campaign ID (5+ digits) and a name, separated by tabs (as copied from DV360) or commas.
+  const parse = (text) => String(text).replace(/\r/g, '').split('\n').map((ln) => {
+    const cells = ln.split(ln.includes('\t') ? '\t' : ',').map((c) => c.trim().replace(/^"|"$/g, '')).filter(Boolean);
+    const id = cells.find((c) => /^\d{5,}$/.test(c) && c !== adv);
+    const name = cells.filter((c) => c !== id && !/^\d+$/.test(c)).sort((a, b) => b.length - a.length)[0] || '';
+    return id ? { id, name } : null;
+  }).filter(Boolean);
+  const preview = parse(paste);
+
+  const importRows = async () => {
+    setBusy(true);
+    let added = 0; let updated = 0;
+    try {
+      for (const p of preview) {
+        const existing = dv360.find((c) => String(c.campaign_id) === p.id);
+        if (existing) { await db().update('dv360_campaigns', existing.id, { advertiser_id: adv, campaign_name: p.name || existing.campaign_name }); updated++; }
+        else { await db().insert('dv360_campaigns', { advertiser_id: adv, campaign_id: p.id, campaign_name: p.name || null }); added++; }
+      }
+      await loadLookups();
+      setPaste('');
+      toast(`${added} added, ${updated} updated for ${advName(adv)}`, 'success');
+    } catch (e) { toast(`Not saved: ${e.message}`, 'error'); } finally { setBusy(false); }
+  };
+  const save = (row, f) => async (v) => {
+    try { await db().update('dv360_campaigns', row.id, { [f]: v }); await loadLookups(); } catch (e) { toast(`Not saved: ${e.message}`, 'error'); }
+  };
+  const del = async (row) => {
+    try { await db().remove('dv360_campaigns', row.id); await loadLookups(); } catch (e) { toast(`Not deleted: ${e.message}`, 'error'); }
+  };
+
+  return html`<div class="stack" style="gap:20px">
+    <div class="card">
+      <div class="card-head"><h3>Add campaigns from DV360</h3></div>
+      <div class="card-body stack" style="gap:12px">
+        <div class="small muted">In DV360, open the advertiser's Campaigns list, select the Name and ID columns, copy, and paste them here. One campaign per line. Briefs for this advertiser will then offer these campaigns and pick the matching one automatically.</div>
+        <div class="grid" style="grid-template-columns:minmax(0,1fr) minmax(0,2fr);align-items:start">
+          <div class="field"><label for="dv-adv">Advertiser</label>
+            <select id="dv-adv" class="select" value=${adv} onChange=${(e) => setAdv(e.currentTarget.value)}>
+              ${advertisers.map((b) => html`<option value=${String(b.advertiser_id)}>${advName(b.advertiser_id)} · ${b.advertiser_id}</option>`)}
+            </select>
+            <div class="hint">${advertisers.find((b) => String(b.advertiser_id) === adv)?.advertiser_name || ''}</div></div>
+          <div class="field"><label for="dv-paste">Campaigns (name and Campaign ID)</label>
+            <textarea id="dv-paste" class="textarea mono" rows="5" value=${paste} onInput=${(e) => setPaste(e.currentTarget.value)}
+              placeholder=${'lrp_skfc_eff_..._1nov-30nov26\t1234567890\nlrp_sksu_ant_...\t1234567891'}></textarea>
+            <div class="hint">${paste.trim() ? `${preview.length} campaigns found` : 'Lines without a numeric ID (like headers) are skipped.'}</div></div>
+        </div>
+        <div><button class="btn btn-primary" disabled=${busy || !adv || preview.length === 0} onClick=${importRows}>${busy ? 'Saving…' : `Save ${preview.length || ''} campaigns`}</button></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="toolbar"><span class="muted small">${rows.length} campaigns for ${advName(adv)}${dv360.length !== rows.length ? ` · ${dv360.length} across all advertisers` : ''}</span></div>
+      <div class="table-wrap"><table class="table" style="min-width:720px">
+        <thead><tr><th>Campaign name</th><th style="width:200px">Campaign ID</th><th style="width:110px"></th></tr></thead>
+        <tbody>
+          ${rows.length === 0 && html`<tr><td colspan="3" class="empty">No campaigns for this advertiser yet. Paste them above.</td></tr>`}
+          ${rows.map((r) => html`<tr key=${r.id}>
+            <td><${TextInput} mono value=${r.campaign_name} onSave=${save(r, 'campaign_name')} /></td>
+            <td><${TextInput} mono value=${r.campaign_id} onSave=${save(r, 'campaign_id')} /></td>
+            <td class="num"><${ConfirmButton} cls="btn btn-sm btn-danger" label="Delete" confirmLabel="Confirm" onConfirm=${() => del(r)} /></td>
+          </tr>`)}
+        </tbody>
+      </table></div>
+    </div>
   </div>`;
 }

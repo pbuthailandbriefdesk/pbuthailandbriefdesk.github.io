@@ -3,11 +3,14 @@ import { useState } from 'preact/hooks';
 import {
   acceptSetup, deleteOrCancel, doneToast, logChange, logNamingFix, markSetUp, takeOver,
 } from '../data/actions.js';
-import { app, useBrief, useCrumbs, useStore } from '../data/store.js';
+import { app, toast, useBrief, useCrumbs, useStore } from '../data/store.js';
 import { LOCKED_STATUSES, OPT } from '../lib/constants.js';
-import { coalesce, fmtTs, isBlank, num } from '../lib/util.js';
+import { coalesce, fmtTs, isBlank, num, singleLine } from '../lib/util.js';
 import { briefPath, go } from '../router.js';
-import { ActionButton, ConfirmButton, ErrorBox, html, Loading, PageHead, Select } from '../ui/ui.js';
+import { ActionButton, ConfirmButton, ErrorBox, Field, html, Loading, PageHead, Select, TextInput } from '../ui/ui.js';
+import { CampaignIdField } from '../ui/campaign.js';
+import { matchPastedIds } from '../lib/adops.js';
+import { buildRows } from '../lib/tree.js';
 import { BriefSummary, briefCrumbs } from './common.js';
 import { loadBriefs } from './home.js';
 
@@ -58,6 +61,7 @@ export function Detail({ route }) {
           <div><div class="label">Buyer</div><div>${coalesce(b.buyer_name, b.buyer_email, 'unassigned')}${isBlank(b.buyer_accepted_at) ? '' : ` (accepted ${fmtTs(b.buyer_accepted_at)})`}</div></div>
           <div><div class="label">Gate</div><div>${coalesce(b.gate_result, '–')}${isBlank(b.locked_at) ? '' : `  ·  Locked ${fmtTs(b.locked_at)}`}</div></div>
         </div>`} />
+        ${locked && (me.isBuyer || me.isAdOps) && html`<${DV360Ids} st=${st} store=${store} canEdit=${me.isBuyer} />`}
         <div class="card">
           <div class="card-head"><h3>History</h3><span class="muted small">${events.length} events</span></div>
           <div class="card-body">
@@ -98,6 +102,62 @@ export function Detail({ route }) {
           </div>
         </div>
       </aside>
+    </div>
+  </div>`;
+}
+
+// Buyer step: record the DV360 Campaign ID and the IDs DV360 gives each IO, line item,
+// ad group and ad after set-up (moved here from Ad Ops on 2026-10-19).
+function DV360Ids({ st, store, canEdit }) {
+  const { brands } = useStore(app);
+  const { b, I, L, G, A } = st;
+  const [paste, setPaste] = useState('');
+  const [open, setOpen] = useState(false);
+  const [onlyMissing, setOnlyMissing] = useState(true);
+  const rows = buildRows(b, I, L, G, A, brands);
+  const withId = rows.filter((r) => !isBlank(r.dvId)).length;
+  const shown = onlyMissing ? rows.filter((r) => isBlank(r.dvId)) : rows;
+
+  const match = async () => {
+    const m = matchPastedIds(paste, b, I, L, G, A);
+    await store.patchRows(m.ups);
+    if (m.campaignId) await store.patchBrief({ dv360_campaign_id: m.campaignId });
+    const n = m.ups.length + (m.campaignId ? 1 : 0);
+    toast(`${m.pastedCount} pasted lines matched a name here. Filled ${n} DV360 IDs (IO ${m.counts.io} · LI ${m.counts.li} · AG ${m.counts.ag} · ad ${m.counts.ad}${m.campaignId ? ' · campaign' : ''}). Rows that already had an ID were left alone.`, n > 0 ? 'success' : 'warning');
+    setPaste('');
+  };
+
+  return html`<div class="card">
+    <div class="card-head"><h3>DV360 IDs</h3>
+      <span class="right small ${withId === rows.length && rows.length ? 'strong' : 'muted'}">${withId} of ${rows.length} rows have an ID${isBlank(b.dv360_campaign_id) ? ' · no campaign ID yet' : ''}</span></div>
+    <div class="card-body stack" style="gap:16px">
+      <div class="small muted">Fill these in during set-up, after creating or finding each item in DV360. Optional, but they make later updates, pauses and SDF edits match the right items.</div>
+      <div class="grid g2" style="align-items:start">
+        <${CampaignIdField} b=${b} disabled=${!canEdit} onSave=${(v) => store.patchBrief({ dv360_campaign_id: v })} />
+        <div class="stack" style="gap:8px">
+          <${Field} label="Paste IDs from DV360" hint="One item per line: name and ID (copy the table from DV360 or an SDF export).">
+            <textarea class="textarea mono" rows="4" disabled=${!canEdit} value=${paste} onInput=${(e) => setPaste(e.currentTarget.value)}
+              placeholder=${'name<TAB>1234567'}></textarea>
+          <//>
+          <div><${ActionButton} cls="btn btn-dark btn-sm" disabled=${!canEdit || !paste.trim()} onClick=${match}>Match IDs by name<//></div>
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn btn-sm" onClick=${() => setOpen(!open)}>${open ? 'Hide items' : 'Enter IDs item by item'}</button>
+        ${open && html`<label class="small row" style="gap:6px"><input type="checkbox" checked=${onlyMissing} onChange=${(e) => setOnlyMissing(e.currentTarget.checked)} /> Only items without an ID</label>`}
+      </div>
+      ${open && html`<div class="ao-list" style="border:1px solid var(--rule)">
+        ${shown.length === 0 && html`<div class="empty small">Every item has a DV360 ID.</div>`}
+        ${shown.map((r) => html`<div class=${`ao-item ${r.lvl}`} key=${r.table + r.rec.id} style=${`padding-left:${16 + r.indent * 20}px`}>
+          <div class="ao-label"><span class=${`lvl ${r.lvl === 'AD' && num(r.ag_no) === 0 ? 'CR' : r.lvl}`}>${r.lvl === 'AD' && num(r.ag_no) === 0 ? 'CR' : r.lvl}</span>
+            <span>${singleLine(r.label)}</span></div>
+          <div class="ao-controls" style="grid-template-columns:minmax(0,1fr) 200px">
+            <div class="field"><label>Name</label><div class="code-chip">${r.nm || '–'}</div></div>
+            <div class="field"><label>DV360 ID</label><${TextInput} mono value=${r.dvId} disabled=${!canEdit}
+              onSave=${(v) => store.patchRow(r.table, r.rec.id, { dv360_id: v })} /></div>
+          </div>
+        </div>`)}
+      </div>`}
     </div>
   </div>`;
 }

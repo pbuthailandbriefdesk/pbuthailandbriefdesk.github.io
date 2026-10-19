@@ -74,14 +74,10 @@ export function adOpsDoneError(b, campaignText, I, L, G, A) {
   if (isBlank(campaignText) || unnamed > 0) {
     return { msg: 'Needs a campaign name and a name for every IO, line item, ad group and ad.', todo: false };
   }
+  // DV360 IDs are not needed here: Ad Ops works before set-up, the Buyer adds them later.
   const c = actionCounts(I, L, G, A);
-  const ext = ['Extension', 'Update'].includes(b.brief_type);
-  if (c.notSet + c.missingId > 0 || (ext && isBlank(b.dv360_campaign_id))) {
-    const parts = [];
-    if (ext && isBlank(b.dv360_campaign_id)) parts.push('the DV360 campaign ID (extension)');
-    if (c.notSet > 0) parts.push(`an action on ${c.notSet} rows`);
-    if (c.missingId > 0) parts.push(`a DV360 ID on ${c.missingId} Update / Pause / No change rows`);
-    return { msg: `Not ready for the Gate. Missing: ${parts.join('  ·  ')}. Showing only the rows to fix. Tip: paste IDs from DV360 in the panel on the right.`, todo: true };
+  if (c.notSet > 0) {
+    return { msg: `Not ready for the Gate. Set an action on ${c.notSet} ${c.notSet === 1 ? 'row' : 'rows'}. Showing only the rows to fix.`, todo: true };
   }
   return null;
 }

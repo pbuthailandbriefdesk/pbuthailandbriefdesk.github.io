@@ -9,6 +9,7 @@ import { needsFix } from '../lib/tree.js';
 import { coalesce, fmtDate, fmtTs, isBlank, num, singleLine, txt } from '../lib/util.js';
 import { briefPath, go } from '../router.js';
 import { ActionButton, ErrorBox, Field, html, Loading, PageHead, Select, TextInput } from '../ui/ui.js';
+import { CampaignIdField } from '../ui/campaign.js';
 import { BriefSummary, briefCrumbs, useDerived } from './common.js';
 import { loadBriefs } from './home.js';
 
@@ -59,7 +60,7 @@ export function AdOps({ route }) {
 
   return html`<div class="page">
     <${PageHead} eyebrow=${b.brief_id} title="Ad Ops taxonomy"
-      sub="Every level needs a name, an action, and a DV360 ID for anything that already exists.">
+      sub="Every IO, line item, ad group and ad needs a name and an action. DV360 IDs are optional here: the Buyer adds them at set-up.">
       <a class="btn" href=${briefPath(b.brief_id)}>Brief summary</a>
     <//>
     ${!canWork && html`<div class="callout warn" style="margin-bottom:18px">This brief is <strong>${b.status}</strong>${me.isAdOps ? '' : ' and you are not in Ad Ops'}. You can look, but hand-over is only for briefs with Ad Ops.</div>`}
@@ -77,7 +78,7 @@ export function AdOps({ route }) {
 
         <div class="card">
           <div class="card-head">
-            <h3>Names, actions & DV360 IDs</h3>
+            <h3>Names & actions</h3>
             <div class="right">
               <span class="small muted">${rows.length} of ${d.rows.length} rows</span>
               <button class="btn btn-sm" onClick=${() => setTodo(!todo)}>${todo ? 'Show all rows' : 'Show only rows to fix'}</button>
@@ -97,8 +98,8 @@ export function AdOps({ route }) {
                   <button class="btn btn-sm" onClick=${() => patch(r, { [r.nameField]: r.sug })}>Use</button></div>`}
               </div>
               <div class="field"><label>Action</label><${Select} value=${r.act} options=${OPT.action} onSave=${(v) => patch(r, { action: v })} /></div>
-              <div class="field"><label>DV360 ID</label><${TextInput} mono value=${r.dvId}
-                placeholder=${['Update', 'Pause', 'No change'].includes(r.act) ? 'Required' : ''} onSave=${(v) => patch(r, { dv360_id: v })} /></div>
+              <div class="field"><label>DV360 ID (optional)</label><${TextInput} mono value=${r.dvId}
+                placeholder="Buyer adds at set-up" onSave=${(v) => patch(r, { dv360_id: v })} /></div>
             </div>
           </div>`)}</div>`}
         </div>
@@ -114,24 +115,23 @@ export function AdOps({ route }) {
               ${num(b.taxonomy_fixes) > 0 && html`<div class="callout err" style="margin-top:8px">Returned by the Gate ${txt(b.taxonomy_fixes)}×: ${txt(b.gate_gaps)}</div>`}
             </div>
             <div class="small">Brief type: <strong>${coalesce(b.brief_type, 'New')}</strong>${ext ? `  ·  changes start ${fmtDate(b.effective_date)}` : ''}${b.brand_lift === 'Yes' ? '  ·  Brand lift ON' : ''}</div>
-            <${TextInput} label=${`DV360 campaign ID${ext ? ' (required: existing campaign)' : ' (after you create it)'}`} mono
-              value=${b.dv360_campaign_id} onSave=${(v) => store.patchBrief({ dv360_campaign_id: v })} />
+            <${CampaignIdField} b=${b} label="DV360 Campaign ID (optional)" disabled=${!canWork}
+              onSave=${(v) => store.patchBrief({ dv360_campaign_id: v })} />
             <div class="small">
               <div class="label" style="margin-bottom:6px">Actions</div>
               ${c.New} new  ·  ${c.Update} update  ·  ${c.Pause} pause  ·
-              <span class=${c.notSet ? 'strong' : ''} style=${c.notSet ? 'color:var(--danger)' : ''}>${c.notSet} not set</span>  ·
-              <span class=${c.missingId ? 'strong' : ''} style=${c.missingId ? 'color:var(--danger)' : ''}>${c.missingId} missing DV360 ID</span>
+              <span class=${c.notSet ? 'strong' : ''} style=${c.notSet ? 'color:var(--danger)' : ''}>${c.notSet} not set</span>
             </div>
             <${ActionButton} cls="btn" onClick=${fill}>Fill blank names with suggestions<//>
             <div class="small muted">Names come from the planner inputs (x = missing). On a new brief, blank actions become New.</div>
             <${ActionButton} cls="btn btn-primary btn-lg btn-arrow" disabled=${!canWork} onClick=${done}>Taxonomy done → Gate<//>
-            <div class="small muted">Needs names, an action on every row, and DV360 IDs for anything that already exists.</div>
+            <div class="small muted">Needs a name and an action on every row. No DV360 IDs needed.</div>
           </div>
         </div>
         <div class="card">
-          <div class="card-head"><h3>Paste DV360 IDs</h3></div>
+          <div class="card-head"><h3>Paste DV360 IDs (optional)</h3></div>
           <div class="card-body stack" style="gap:10px">
-            <${Field} hint="One entity per line, name and ID (copy the table from DV360 or an SDF export).">
+            <${Field} hint="Only if IDs already exist (e.g. an extension). One entity per line, name and ID, copied from DV360 or an SDF export.">
               <textarea class="textarea mono" rows="6" value=${paste} onInput=${(e) => setPaste(e.currentTarget.value)}
                 placeholder=${'name<TAB>1234567\nname 1234567'}></textarea>
             <//>

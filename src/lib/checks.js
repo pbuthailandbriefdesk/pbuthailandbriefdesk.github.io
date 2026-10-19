@@ -3,15 +3,12 @@
 import { gt0, isBlank, round2, sum } from './util.js';
 
 const YT_FORMATS = ['VRC', 'VVC', 'Non-skip', 'Bumper', 'Shorts'];
-const NEEDS_ID = ['Update', 'Pause', 'No change'];
-const missingAction = (r) => isBlank(r.action) || (NEEDS_ID.includes(r.action) && isBlank(r.dv360_id));
 const startsHttps = (v) => !isBlank(v) && String(v).startsWith('https://');
 const lt = (a, b) => !isBlank(a) && !isBlank(b) && a < b; // date strings compare as text
 const gt = (a, b) => !isBlank(a) && !isBlank(b) && a > b;
 
 export function computeChecks(b, I, L, G, A) {
   const io = (n) => I.find((x) => x.io_no === n) || {};
-  const ext = ['Extension', 'Update'].includes(b.brief_type);
 
   return [
     {
@@ -92,11 +89,12 @@ export function computeChecks(b, I, L, G, A) {
     { no: 11, item: 'Brand safety', rule: 'Default if blank', ok: true, gap: '' },
     { no: 12, item: 'Reporting & brand lift', rule: 'If BLS', ok: b.brand_lift !== 'Yes' || !isBlank(b.bls_notes), gap: 'Brand lift is on: add the BLS budget, dates and questions' },
     {
-      no: 13, item: 'DV360 actions & IDs', rule: 'Ad Ops',
+      // Changed 2026-10-19: Ad Ops works before the Buyer, so DV360 IDs are not known yet.
+      // Ad Ops sets an action on every row; the Buyer records DV360 IDs at set-up.
+      no: 13, item: 'DV360 actions', rule: 'Ad Ops',
       ok: ['Draft', 'Returned'].includes(b.status) ||
-        ((!ext || !isBlank(b.dv360_campaign_id)) &&
-          [I, L, G, A].every((rows) => rows.every((r) => !missingAction(r)))),
-      gap: 'Ad Ops: an action on every IO, line, ad group and ad, and the DV360 ID for anything that already exists',
+        [I, L, G, A].every((rows) => rows.every((r) => !isBlank(r.action))),
+      gap: 'Ad Ops: an action (New / Update / Pause / No change) on every IO, line, ad group and ad. DV360 IDs are added by the Buyer at set-up.',
     },
   ];
 }

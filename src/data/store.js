@@ -31,7 +31,7 @@ export function useStore(store) {
 export const app = createStore({
   db: null,
   me: null,           // { email, name, role, team, isAdOps, isGate, isAdmin }
-  brands: [], team: [], holidays: [], sdf: [],
+  brands: [], team: [], holidays: [], sdf: [], dv360: [],
   notifications: [],
   toasts: [],
 });
@@ -75,11 +75,12 @@ export function profileFor(session, team) {
 
 export async function loadLookups() {
   const d = db();
-  const [brands, team, holidays, sdf] = await Promise.all([
+  const [brands, team, holidays, sdf, dv360] = await Promise.all([
     d.list('brands'), d.list('desk_team'), d.list('holidays'), d.list('sdf_defaults'),
+    d.list('dv360_campaigns').catch(() => []), // 004_dv360_campaigns.sql; empty if not set up
   ]);
-  app.set({ brands, team, holidays, sdf });
-  return { brands, team, holidays, sdf };
+  app.set({ brands, team, holidays, sdf, dv360 });
+  return { brands, team, holidays, sdf, dv360 };
 }
 
 export async function loadNotifications() {
