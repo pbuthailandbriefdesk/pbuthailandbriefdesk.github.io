@@ -5,7 +5,7 @@ export const CUTOFF_HOUR = 15;         // nfCutOffHour
 export const AO_TURNAROUND_HOURS = 24; // nfAOTurnaroundHours
 // Buyer scorecard targets (new; not in the Power App). Change here if the team agrees other SLAs.
 export const BUYER_PICKUP_HOURS = 24;  // a buyer accepts a locked brief within this many hours
-export const BUYER_SETUP_HOURS = 48;   // average Lock → set up in DV360
+export const BUYER_SETUP_HOURS = 72;   // average Lock → set up in DV360
 
 export const ROLES = ['Planner', 'Ad Ops', 'Gatekeeper', 'Buyer', 'Admin'];
 export const AD_OPS_ROLES = ['Ad Ops', 'Admin'];        // nfIsAdOps
