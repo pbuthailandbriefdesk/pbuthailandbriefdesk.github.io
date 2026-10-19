@@ -1,6 +1,5 @@
 // App state: backend, signed-in user, reference lists, and a store per open brief.
 import { useEffect, useState } from 'preact/hooks';
-import { AD_OPS_ROLES, GATE_ROLES } from '../lib/constants.js';
 import { isBlank, lower, mailtoHref, nowIso } from '../lib/util.js';
 
 export function createStore(initial) {
@@ -49,16 +48,27 @@ export function profileFor(session, team) {
   const email = lower(session.email);
   const row = team.find((t) => lower(t.email) === email);
   // Name and role are managed by Admins in User management (desk_team).
-  const role = row?.role || 'Planner';
+  // Old SharePoint roles (e.g. "Standard") count as Planner.
+  const role = ['Planner', 'Ad Ops', 'Gatekeeper', 'Buyer', 'Admin'].includes(row?.role) ? row.role : 'Planner';
+  // Permissions (agreed 2026-10-19):
+  //   Admin, Gatekeeper  everything, including User management
+  //   Buyer              set-up only (Set-up queue, Locked / set up, SDF)
+  //   Planner            create and manage their own briefs only
+  //   Ad Ops             taxonomy only (Ad Ops queue, SDF)
+  const isSuper = role === 'Admin' || role === 'Gatekeeper';
   return {
     email,
     registered: !!row,
     name: row?.name || session.fullName || email,
     role,
     team: row?.team || null,
-    isAdOps: AD_OPS_ROLES.includes(role),
-    isGate: GATE_ROLES.includes(role),
-    isAdmin: role === 'Admin',
+    isSuper,
+    isAdmin: isSuper,                          // User management, edit anyone's brief, test mode
+    isGate: isSuper,                           // run the Brief Gate
+    isAdOps: role === 'Ad Ops' || isSuper,     // taxonomy
+    isBuyer: role === 'Buyer' || isSuper,      // accept / take over / mark set up
+    canPlan: role === 'Planner' || isSuper,    // create briefs
+    canSdf: role === 'Ad Ops' || role === 'Buyer' || isSuper,
     hasName: !isBlank(session.fullName) || !isBlank(row?.name),
   };
 }

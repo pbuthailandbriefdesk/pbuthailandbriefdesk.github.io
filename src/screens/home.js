@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { createBrief } from '../data/actions.js';
 import { app, db, toast, useCrumbs, useStore } from '../data/store.js';
-import { QUEUES, queueRows } from '../lib/queues.js';
+import { homeQueue, QUEUES, queueRows, queuesFor } from '../lib/queues.js';
 import { coalesce, fmtDate, fmtInt, fmtTs, isBlank, lower } from '../lib/util.js';
 import { briefPath, go } from '../router.js';
 import { ActionButton, html, Icon, Loading, PageHead, StatusPill } from '../ui/ui.js';
@@ -27,7 +27,9 @@ const QUEUE_SUB = {
 
 export function Home({ route }) {
   const { briefs, me } = useStore(app);
-  const tab = route.query.tab || 'Mine';
+  // Each role only sees its own queues; anything else falls back to its home queue.
+  const allowed = queuesFor(me);
+  const tab = allowed.some((q) => q.key === route.query.tab) ? route.query.tab : homeQueue(me);
   const queue = QUEUES.find((q) => q.key === tab) || QUEUES[0];
   const [search, setSearch] = useState('');
   useCrumbs([{ label: 'Briefs', href: '#/' }, { label: queue.label }]);
@@ -43,13 +45,13 @@ export function Home({ route }) {
       .some((v) => lower(v).includes(s)));
 
   const tiles = [
-    { k: 'Drafts', v: n('Draft') + n('Returned'), note: `${n('Returned')} returned by the Gate`, tab: 'Mine', accent: !me.isAdOps && !me.isGate },
-    { k: 'With Ad Ops', v: n('With Ad Ops'), note: 'Taxonomy in progress', tab: 'AO', accent: me.isAdOps && !me.isAdmin },
-    { k: 'With the Gate', v: n('With Gatekeeper'), note: 'Waiting for the 14-item check', tab: 'Gate', accent: me.role === 'Gatekeeper' },
-    { k: 'Waiting for a buyer', v: n('Locked'), note: 'Locked, SLA running', tab: 'Setup', accent: me.role === 'Buyer' },
+    { k: 'Drafts', v: n('Draft') + n('Returned'), note: `${n('Returned')} returned by the Gate`, tab: 'Mine', accent: tab === 'Mine' },
+    { k: 'With Ad Ops', v: n('With Ad Ops'), note: 'Taxonomy in progress', tab: 'AO', accent: tab === 'AO' },
+    { k: 'With the Gate', v: n('With Gatekeeper'), note: 'Waiting for the 14-item check', tab: 'Gate', accent: tab === 'Gate' },
+    { k: 'Waiting for a buyer', v: n('Locked'), note: 'Locked, SLA running', tab: 'Setup', accent: tab === 'Setup' },
     { k: 'In set-up', v: n('In set-up'), note: 'Accepted by a buyer', tab: 'Locked' },
     { k: 'Set up', v: n('Set up'), note: 'Live in DV360', tab: 'Locked' },
-  ];
+  ].filter((t) => allowed.some((q) => q.key === t.tab));
 
   const newBrief = async () => {
     const b = await createBrief();
@@ -59,7 +61,7 @@ export function Home({ route }) {
 
   return html`<div class="page">
     <${PageHead} eyebrow="Briefs" title=${queue.label} sub=${QUEUE_SUB[tab]}>
-      <${ActionButton} cls="btn btn-primary btn-lg btn-arrow" onClick=${newBrief}>New brief<//>
+      ${me.canPlan && html`<${ActionButton} cls="btn btn-primary btn-lg btn-arrow" onClick=${newBrief}>New brief<//>`}
     <//>
 
     <div class="tiles">

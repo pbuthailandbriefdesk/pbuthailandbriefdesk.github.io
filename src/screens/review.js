@@ -112,7 +112,7 @@ export function Review({ route }) {
       ${showChecks && html`<div style="margin-top:12px"><${ChecksList} checks=${d.checks} /></div>`}
     </div></div>
 
-    ${(me.isAdOps || me.isGate) && html`<${SdfPanel} st=${st} store=${store} />`}
+    ${me.canSdf && html`<${SdfPanel} st=${st} store=${store} />`}
 
     <div class="card">
       <div class="card-head">

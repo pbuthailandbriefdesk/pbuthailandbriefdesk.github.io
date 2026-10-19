@@ -271,6 +271,38 @@ a.tile:hover { border-color: var(--wpp-navy); }
 .score-card.missed { border-top: 4px solid var(--danger); }
 .score-card.none { border-top: 4px solid var(--grey-100); }
 
+/* Scorecards */
+.role-score { padding: 18px 20px; border: 1px solid var(--rule); background: var(--white); border-top: 4px solid var(--grey-100); }
+.role-score.good { border-top-color: var(--lime); }
+.role-score.mid { border-top-color: var(--yellow); }
+.role-score.bad { border-top-color: var(--danger); }
+.role-score .k { font-size: 18px; font-weight: 700; text-transform: uppercase; color: var(--cornflower); }
+.role-score .v { margin-top: 10px; font-size: 40px; font-weight: 700; line-height: 1; }
+.role-score .v span { font-size: 14px; font-weight: 400; color: var(--ink-muted); margin-left: 8px; }
+.role-score .bar { height: 6px; background: var(--grey-100); margin: 14px 0 8px; position: relative; }
+.role-score .bar i { position: absolute; inset: 0 auto 0 0; background: var(--wpp-navy); }
+.role-score.good .bar i { background: var(--lime); }
+.role-score .n { font-size: 12px; color: var(--ink-muted); }
+.metrics { list-style: none; margin: 0; padding: 0; }
+.metrics li { padding: 14px 20px; border-bottom: 1px solid var(--rule); border-left: 3px solid transparent; }
+.metrics li:last-child { border-bottom: none; }
+.metrics li.met { border-left-color: var(--lime); }
+.metrics li.missed { border-left-color: var(--danger); }
+.metrics .mt { font-weight: 700; font-size: 13px; }
+.metrics .mv { font-size: 28px; font-weight: 700; margin-top: 4px; line-height: 1.1; }
+.metrics .mtarget { font-size: 12px; color: var(--ink-muted); margin-top: 4px; }
+.metrics li.missed .mtarget { color: var(--danger); }
+.metrics .mnote { font-size: 12px; color: var(--ink-faint); margin-top: 2px; }
+.live-tag { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: var(--radius-full); background: var(--yellow); vertical-align: middle; }
+.stage-row { display: grid; grid-template-columns: 220px minmax(0, 1fr) 70px; gap: 14px; align-items: center; }
+.stage-row .sk { font-weight: 700; font-size: 13px; }
+.stage-row .sbar { height: 14px; background: var(--grey-100); position: relative; }
+.stage-row .sbar i { position: absolute; inset: 0 auto 0 0; background: var(--cornflower); }
+.stage-row .sbar i.g { background: var(--wpp-navy); }
+.stage-row .sbar i.b { background: var(--lime); }
+.stage-row .sv { text-align: right; font-weight: 700; }
+@media (max-width: 900px) { .stage-row { grid-template-columns: 1fr 60px; } .stage-row .sbar { grid-column: 1 / -1; grid-row: 2; } }
+
 /* ---------------------------------------------------------------- Status pills */
 .pill {
   display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 8px;

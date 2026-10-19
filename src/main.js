@@ -1,7 +1,7 @@
 import { render } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { ALLOWED_DOMAINS, SUPABASE_ANON_KEY, SUPABASE_URL } from './config.js';
-import { QUEUES } from './lib/queues.js';
+import { homeQueue, queuesFor } from './lib/queues.js';
 import { fmtTs, lower } from './lib/util.js';
 import { app, db, dismissToast, loadLookups, loadNotifications, profileFor, toast, useStore } from './data/store.js';
 import { go, useRoute } from './router.js';
@@ -197,8 +197,9 @@ function SavingIndicator() {
 
 function Sidebar({ route }) {
   const { me, briefs, db: d } = useStore(app);
-  const counts = Object.fromEntries(QUEUES.map((q) => [q.key, (briefs || []).filter((b) => q.test(b, me)).length]));
-  const tab = route.name === 'home' ? (route.query.tab || 'Mine') : null;
+  const mine = queuesFor(me);
+  const counts = Object.fromEntries(mine.map((q) => [q.key, (briefs || []).filter((b) => q.test(b, me)).length]));
+  const tab = route.name === 'home' ? (mine.some((q) => q.key === route.query.tab) ? route.query.tab : homeQueue(me)) : null;
   return html`<aside class="sidebar">
     <div class="brand">
       <div class="eyebrow"><span class="dot"></span>WPP Media</div>
@@ -207,7 +208,7 @@ function Sidebar({ route }) {
     </div>
     <nav class="nav" aria-label="Main">
       <div class="nav-label">Briefs</div>
-      ${QUEUES.map((q) => html`<a href=${`#/?tab=${q.key}`} class=${tab === q.key ? 'active' : ''}>
+      ${mine.map((q) => html`<a href=${`#/?tab=${q.key}`} class=${tab === q.key ? 'active' : ''}>
         <${Icon} name=${q.icon} />${q.label}${briefs && html`<span class="count">${counts[q.key]}</span>`}</a>`)}
       <div class="nav-label">Insights</div>
       <a href="#/score" class=${route.name === 'score' ? 'active' : ''}><${Icon} name="chart" />Scorecards</a>

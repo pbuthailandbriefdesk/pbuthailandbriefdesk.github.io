@@ -8,13 +8,14 @@ import { lower } from '../lib/util.js';
 import { html, ConfirmButton, DateInput, PageHead, Select, TextInput } from '../ui/ui.js';
 
 const ROLE_HELP = {
-  Planner: 'Creates and submits briefs, requests changes.',
-  'Ad Ops': 'Taxonomy, actions, DV360 IDs, SDF export.',
-  Gatekeeper: 'Runs the Gate check; also accepts set-ups.',
-  Buyer: 'Accepts locked briefs and marks them set up.',
+  Planner: 'Creates their own briefs only.',
+  'Ad Ops': 'Taxonomy only: names, actions, DV360 IDs.',
+  Gatekeeper: 'Everything, including the Gate check and this page.',
+  Buyer: 'Set-up only: Set-up queue and Locked / set up.',
   Admin: 'Everything, including this page.',
 };
-const TEAMS = ['CPD', 'Non-CPD', 'PBU', 'All'];
+// Teams: "All" means CPD + Non-CPD.
+const TEAMS = ['All', 'CPD', 'Non-CPD', 'PBU', 'Ad Ops'];
 
 const LISTS = {
   brands: {
@@ -117,7 +118,7 @@ function Users() {
               ${ROLES.map((r) => html`<option value=${r}>${r === 'Gatekeeper' ? 'Gate (Gatekeeper)' : r}</option>`)}</select></div>
           <div class="field"><label for="nu-team">Team</label>
             <select id="nu-team" class="select" value=${form.team} onChange=${set('team')}>
-              <option value="">—</option>${TEAMS.map((t) => html`<option value=${t}>${t}</option>`)}</select></div>
+              <option value="">—</option>${TEAMS.map((t) => html`<option value=${t}>${t === 'All' ? 'All (CPD + Non-CPD)' : t}</option>`)}</select></div>
           <button class="btn btn-primary" type="submit">Add user</button>
         </div>
         <div class="hint" style="margin-top:8px">${ROLE_HELP[form.role]}</div>

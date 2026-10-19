@@ -26,11 +26,11 @@ export function Detail({ route }) {
   const events = [...E].sort((x, y) => num(y.id) - num(x.id));
 
   const show = {
-    accept: b.status === 'Locked' && me.isGate,
-    setUp: b.status === 'In set-up' && (b.buyer_email?.toLowerCase() === me.email || me.role === 'Admin'),
-    takeOver: b.status === 'In set-up' && me.isGate && b.buyer_email?.toLowerCase() !== me.email && me.role !== 'Admin',
+    accept: b.status === 'Locked' && me.isBuyer,
+    setUp: b.status === 'In set-up' && (b.buyer_email?.toLowerCase() === me.email || me.isSuper),
+    takeOver: b.status === 'In set-up' && me.isBuyer && b.buyer_email?.toLowerCase() !== me.email && !me.isSuper,
     change: locked && mine,
-    namingFix: b.status === 'Set up' && (me.isGate || me.isAdOps),
+    namingFix: b.status === 'Set up' && (me.isBuyer || me.isAdOps),
     cancel: ['Draft', 'Returned', 'With Ad Ops', 'With Gatekeeper', 'Locked', 'In set-up'].includes(b.status) && mine,
   };
 
