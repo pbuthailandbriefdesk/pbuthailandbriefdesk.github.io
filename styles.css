@@ -361,6 +361,8 @@ a.tile:hover { border-color: var(--wpp-navy); }
 .search { position: relative; flex: 0 1 340px; }
 .search svg { position: absolute; left: 10px; top: 9px; width: 18px; height: 18px; color: var(--ink-faint); }
 .search .input { padding-left: 36px; }
+.select.filter { width: auto; min-width: 120px; max-width: 220px; height: 36px; font-size: 13px; }
+.select.filter.on { border-color: var(--wpp-navy); border-width: 2px; background-color: var(--surface-2); font-weight: 700; }
 .seg { display: inline-flex; border: 1px solid var(--wpp-navy); }
 .seg button { border: none; background: var(--white); padding: 0 14px; height: 34px; cursor: pointer; font-weight: 700; font-size: 13px; }
 .seg button + button { border-left: 1px solid var(--wpp-navy); }

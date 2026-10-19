@@ -32,17 +32,32 @@ export function Home({ route }) {
   const tab = allowed.some((q) => q.key === route.query.tab) ? route.query.tab : homeQueue(me);
   const queue = QUEUES.find((q) => q.key === tab) || QUEUES[0];
   const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState({});
   useCrumbs([{ label: 'Briefs', href: '#/' }, { label: queue.label }]);
-  useEffect(() => { loadBriefs(); }, [tab]);
+  useEffect(() => { loadBriefs(); setFilters({}); }, [tab]);
 
   if (!briefs) return html`<${Loading} />`;
 
   const live = briefs.filter((b) => b.status !== 'Cancelled');
   const n = (s) => live.filter((b) => b.status === s).length;
   const s = lower(search.trim());
-  const rows = queueRows(briefs, tab, me).filter((b) => !s ||
-    [b.brief_id, b.brand, b.team, b.campaign_taxonomy, b.campaign_name, b.planner_name, b.buyer_name, b.status, b.po_number]
-      .some((v) => lower(v).includes(s)));
+  const queueAll = queueRows(briefs, tab, me);
+  // Dropdown filters next to the search box; options come from the briefs in this queue.
+  const buyerOf = (b) => b.buyer_name || b.buyer_email || '';
+  const FILTERS = [
+    { key: 'status', label: 'Status', get: (b) => b.status || '' },
+    { key: 'planner', label: 'Planner', get: (b) => b.planner_name || b.planner_email || '' },
+    { key: 'buyer', label: 'Buyer', get: buyerOf, none: '(no buyer yet)' },
+    { key: 'brand', label: 'Brand', get: (b) => b.brand || '', none: '(no brand)' },
+    { key: 'id', label: 'Brief ID', get: (b) => b.brief_id },
+  ];
+  const optionsFor = (f) => [...new Set(queueAll.map(f.get))].sort((a, b) => (f.key === 'id' ? b.localeCompare(a) : a.localeCompare(b)));
+  const active = FILTERS.filter((f) => filters[f.key] !== undefined && filters[f.key] !== null);
+  const rows = queueAll
+    .filter((b) => active.every((f) => f.get(b) === filters[f.key]))
+    .filter((b) => !s ||
+      [b.brief_id, b.brand, b.team, b.campaign_taxonomy, b.campaign_name, b.planner_name, b.buyer_name, b.status, b.po_number]
+        .some((v) => lower(v).includes(s)));
 
   const tiles = [
     { k: 'Drafts', v: n('Draft') + n('Returned'), note: `${n('Returned')} returned by the Gate`, tab: 'Mine', accent: tab === 'Mine' },
@@ -75,6 +90,16 @@ export function Home({ route }) {
         <input class="input" type="search" placeholder="Search ID, brand, campaign, PO, people…" aria-label="Search briefs"
           value=${search} onInput=${(e) => setSearch(e.currentTarget.value)} />
       </div>
+      ${FILTERS.map((f) => {
+        const on = filters[f.key] !== undefined && filters[f.key] !== null;
+        return html`<select class=${`select filter${on ? ' on' : ''}`} aria-label=${`Filter by ${f.label}`}
+          value=${on ? `v:${filters[f.key]}` : ''}
+          onChange=${(e) => { const v = e.currentTarget.value; setFilters({ ...filters, [f.key]: v === '' ? null : v.slice(2) }); }}>
+          <option value="">${f.label}: All</option>
+          ${optionsFor(f).map((o) => html`<option value=${`v:${o}`}>${o === '' ? f.none || '(blank)' : o}</option>`)}
+        </select>`;
+      })}
+      ${(active.length > 0 || s) && html`<button class="btn btn-sm btn-ghost" onClick=${() => { setFilters({}); setSearch(''); }}>Clear</button>`}
       <span class="muted small">${rows.length} ${rows.length === 1 ? 'brief' : 'briefs'}</span>
     </div>
 
