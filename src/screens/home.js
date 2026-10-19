@@ -53,7 +53,11 @@ export function Home({ route }) {
   ];
   const optionsFor = (f) => [...new Set(queueAll.map(f.get))].sort((a, b) => (f.key === 'id' ? b.localeCompare(a) : a.localeCompare(b)));
   const active = FILTERS.filter((f) => filters[f.key] !== undefined && filters[f.key] !== null);
+  // Cancelled briefs stay hidden unless Status = Cancelled is picked.
+  const showCancelled = filters.status === 'Cancelled';
+  const hiddenCancelled = showCancelled ? 0 : queueAll.filter((b) => b.status === 'Cancelled').length;
   const rows = queueAll
+    .filter((b) => showCancelled || b.status !== 'Cancelled')
     .filter((b) => active.every((f) => f.get(b) === filters[f.key]))
     .filter((b) => !s ||
       [b.brief_id, b.brand, b.team, b.campaign_taxonomy, b.campaign_name, b.planner_name, b.buyer_name, b.status, b.po_number]
@@ -100,7 +104,7 @@ export function Home({ route }) {
         </select>`;
       })}
       ${(active.length > 0 || s) && html`<button class="btn btn-sm btn-ghost" onClick=${() => { setFilters({}); setSearch(''); }}>Clear</button>`}
-      <span class="muted small">${rows.length} ${rows.length === 1 ? 'brief' : 'briefs'}</span>
+      <span class="muted small">${rows.length} ${rows.length === 1 ? 'brief' : 'briefs'}${hiddenCancelled > 0 ? ` · ${hiddenCancelled} cancelled hidden` : ''}</span>
     </div>
 
     ${rows.length === 0 ? html`<div class="table-wrap"><div class="empty">
