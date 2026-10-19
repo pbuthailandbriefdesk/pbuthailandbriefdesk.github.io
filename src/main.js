@@ -104,7 +104,7 @@ function SignIn() {
         <h1>L'Oréal Brief Desk</h1>
         <p>Brief, taxonomy, Gate check and DV360 set-up for every L'Oréal programmatic campaign, in one place.</p>
       </div>
-      <div class="small" style="color:rgba(255,255,255,.6)">Planner → Ad Ops → Gate → Buyer</div>
+      <div class="small" style="color:rgba(255,255,255,.6)">Planner → Ad Ops → Gate → Buyer → QA</div>
     </div>
     <div class="form">
       <div class="eyebrow muted"><span class="dot"></span>${d.mode === 'demo' ? 'Demo mode' : 'Welcome'}</div>
