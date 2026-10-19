@@ -1,0 +1,10 @@
+# Static site, no build step: Netlify serves the repo root as it is.
+[build]
+  publish = "."
+  command = ""
+
+# Short cache so a new deploy shows up without a hard refresh.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
