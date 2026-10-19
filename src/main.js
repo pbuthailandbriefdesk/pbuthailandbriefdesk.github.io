@@ -55,7 +55,13 @@ async function refreshSession() {
   }
   try {
     const { team } = await loadLookups();
-    app.set({ me: profileFor(session, team), ready: true, authError: null });
+    const me = profileFor(session, team);
+    if (!me.registered) {
+      await d.signOut();
+      app.set({ me: null, ready: true, authError: `${me.email} is no longer in User management. Ask an Admin to add you.` });
+      return;
+    }
+    app.set({ me, ready: true, authError: null });
     loadBriefs();
     loadNotifications();
     clearInterval(window.__lbdPoll);
@@ -69,31 +75,26 @@ async function refreshSession() {
 function SignIn() {
   const { db: d, authError } = useStore(app);
   const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const [role, setRole] = useState('Planner');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
-  const [team, setTeam] = useState([]);
-  useEffect(() => { d.list('desk_team').then(setTeam).catch(() => setTeam([])); }, []);
 
-  // Known desk-team emails fill in their name and role (both can still be changed).
-  const onEmail = (v) => {
-    setEmail(v);
-    const row = team.find((t) => lower(t.email) === lower(v.trim()));
-    if (row) {
-      if (row.name) setName(row.name);
-      if (ROLE_CHOICES.some((r) => r.value === row.role)) setRole(row.role);
-    }
-  };
-
+  // Name and role come from User management (desk_team), never from the person.
   const submit = async (e) => {
     e.preventDefault();
     const em = email.trim().toLowerCase();
     if (!ALLOWED_DOMAINS.includes(em.split('@')[1])) { setErr(`Use your ${ALLOWED_DOMAINS.map((x) => '@' + x).join(' or ')} address.`); return; }
-    if (!name.trim()) { setErr('Enter your name.'); return; }
     setErr(null);
     setBusy(true);
-    try { await d.signIn(em, name.trim(), role); } catch (ex) { setErr(ex.message); } finally { setBusy(false); }
+    try {
+      const team = await d.list('desk_team');
+      const row = team.find((t) => lower(t.email) === em);
+      if (!row) {
+        const admins = team.filter((t) => t.role === 'Admin').map((t) => t.name || t.email).join(' or ');
+        setErr(`${em} isn't registered yet. Ask an Admin${admins ? ` (${admins})` : ''} to add you in User management.`);
+        return;
+      }
+      await d.signIn(em, row.name || '');
+    } catch (ex) { setErr(ex.message); } finally { setBusy(false); }
   };
 
   return html`<div class="signin">
@@ -107,34 +108,17 @@ function SignIn() {
     </div>
     <div class="form">
       <div class="eyebrow muted"><span class="dot"></span>${d.mode === 'demo' ? 'Demo mode' : 'Welcome'}</div>
-      <h2>Tell us who you are</h2>
-      <p class="muted">${d.mode === 'demo' ? 'Demo data in this browser only. ' : ''}Your name and role go on the briefs you work on and in the history log.</p>
+      <h2>Enter your work email</h2>
+      <p class="muted">${d.mode === 'demo' ? 'Demo data in this browser only. ' : ''}Your name and role come from User management.</p>
       <form onSubmit=${submit} class="stack" style="gap:14px">
         <div class="field"><label for="em">Work email</label>
-          <input id="em" class="input" type="email" required placeholder="name@wppmedia.com" value=${email} onInput=${(e) => onEmail(e.currentTarget.value)} /></div>
-        <div class="field"><label for="nm">Your name</label>
-          <input id="nm" class="input" required placeholder="First Last" value=${name} onInput=${(e) => setName(e.currentTarget.value)} /></div>
-        <div class="field"><label>Role</label>
-          <div class="seg" role="radiogroup" aria-label="Role" style="flex-wrap:wrap">
-            ${ROLE_CHOICES.map((r) => html`<button type="button" role="radio" aria-checked=${role === r.value}
-              class=${role === r.value ? 'on' : ''} onClick=${() => setRole(r.value)}>${r.label}</button>`)}
-          </div>
-          <div class="hint">${ROLE_CHOICES.find((r) => r.value === role).hint}</div>
-        </div>
+          <input id="em" class="input" type="email" required autocomplete="email" placeholder="name@wppmedia.com" value=${email} onInput=${(e) => setEmail(e.currentTarget.value)} /></div>
         ${(err || authError) && html`<div class="callout err">${err || authError}</div>`}
-        <div><button class="btn btn-primary btn-lg btn-arrow" type="submit" disabled=${busy}>Continue</button></div>
+        <div><button class="btn btn-primary btn-lg btn-arrow" type="submit" disabled=${busy}>${busy ? 'Checking…' : 'Continue'}</button></div>
       </form>
     </div>
   </div>`;
 }
-
-const ROLE_CHOICES = [
-  { value: 'Planner', label: 'Planner', hint: 'Create and submit briefs, request changes.' },
-  { value: 'Ad Ops', label: 'Ad Ops', hint: 'Taxonomy, actions and DV360 IDs, SDF export.' },
-  { value: 'Gatekeeper', label: 'Gate', hint: 'Run the 14-item Gate check, lock or return briefs.' },
-  { value: 'Buyer', label: 'Buyer', hint: 'Accept locked briefs and mark them set up in DV360.' },
-  { value: 'Admin', label: 'Admin', hint: 'Everything, plus the Admin page and test mode.' },
-];
 
 function NamePrompt() {
   const { db: d, me } = useStore(app);
@@ -220,12 +204,12 @@ function Sidebar({ route }) {
         <${Icon} name=${q.icon} />${q.label}${briefs && html`<span class="count">${counts[q.key]}</span>`}</a>`)}
       <div class="nav-label">Insights</div>
       <a href="#/score" class=${route.name === 'score' ? 'active' : ''}><${Icon} name="chart" />Scorecards</a>
-      ${me.isAdmin && html`<a href="#/admin" class=${route.name === 'admin' ? 'active' : ''}><${Icon} name="settings" />Admin</a>`}
+      ${me.isAdmin && html`<a href="#/admin" class=${route.name === 'admin' ? 'active' : ''}><${Icon} name="settings" />User management</a>`}
     </nav>
     <div class="sidebar-foot">
       <div class="who">${me.name}</div>
       <div class="role">${me.role}${me.team ? ` · ${me.team}` : ''}</div>
-      <button onClick=${() => d.signOut()}>Change name / role</button>
+      <button onClick=${() => d.signOut()}>Switch user</button>
       ${d.mode === 'demo' && html`<div><span class="demo-badge">Demo data · this browser only</span></div>`}
     </div>
   </aside>`;

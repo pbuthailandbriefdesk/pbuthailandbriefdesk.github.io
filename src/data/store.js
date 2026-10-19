@@ -48,10 +48,12 @@ export function useCrumbs(list) {
 export function profileFor(session, team) {
   const email = lower(session.email);
   const row = team.find((t) => lower(t.email) === email);
-  const role = session.role || row?.role || 'Planner'; // role chosen on the entry screen wins
+  // Name and role are managed by Admins in User management (desk_team).
+  const role = row?.role || 'Planner';
   return {
     email,
-    name: session.fullName || row?.name || email,
+    registered: !!row,
+    name: row?.name || session.fullName || email,
     role,
     team: row?.team || null,
     isAdOps: AD_OPS_ROLES.includes(role),
