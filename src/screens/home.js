@@ -22,7 +22,8 @@ const QUEUE_SUB = {
   Gate: 'Briefs with complete taxonomy, waiting for the 14-item Gate check.',
   Setup: 'Locked briefs waiting for a buyer, and set-ups you have accepted.',
   QA: 'Campaigns the Buyer has set up, waiting for P2P QA against the brief.',
-  Locked: 'Everything that passed the Gate: locked, in set-up, in QA or set up.',
+  QAHist: 'Briefs that have been through P2P QA, with the latest result.',
+  Locked:'Everything that passed the Gate: locked, in set-up, in QA or set up.',
   All: 'Every brief in the Desk.',
 };
 
@@ -34,7 +35,7 @@ export function Home({ route }) {
   const queue = QUEUES.find((q) => q.key === tab) || QUEUES[0];
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState({});
-  useCrumbs([{ label: 'Briefs', href: '#/' }, { label: queue.label }]);
+  useCrumbs([queue.group === 'qa' ? { label: 'Quality assurance' } : { label: 'Briefs', href: '#/' }, { label: queue.label }]);
   useEffect(() => { loadBriefs(); setFilters({}); }, [tab]);
 
   if (!briefs) return html`<${Loading} />`;
@@ -81,7 +82,7 @@ export function Home({ route }) {
   };
 
   return html`<div class="page">
-    <${PageHead} eyebrow="Briefs" title=${queue.label} sub=${QUEUE_SUB[tab]}>
+    <${PageHead} eyebrow=${queue.group === 'qa' ? 'Quality assurance' : 'Briefs'} title=${queue.label} sub=${QUEUE_SUB[tab]}>
       ${me.canPlan && html`<${ActionButton} cls="btn btn-primary btn-lg btn-arrow" onClick=${newBrief}>New brief<//>`}
     <//>
 

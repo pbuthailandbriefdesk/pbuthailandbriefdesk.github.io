@@ -201,6 +201,9 @@ function Sidebar({ route }) {
   const mine = queuesFor(me);
   const counts = Object.fromEntries(mine.map((q) => [q.key, (briefs || []).filter((b) => q.test(b, me)).length]));
   const tab = route.name === 'home' ? (mine.some((q) => q.key === route.query.tab) ? route.query.tab : homeQueue(me)) : null;
+  const qa = mine.filter((q) => q.group === 'qa');
+  const link = (q) => html`<a href=${`#/?tab=${q.key}`} class=${tab === q.key || (q.key === 'QA' && route.name === 'qa') ? 'active' : ''}>
+    <${Icon} name=${q.icon} />${q.label}${briefs && html`<span class="count">${counts[q.key]}</span>`}</a>`;
   return html`<aside class="sidebar">
     <div class="brand">
       <div class="eyebrow"><span class="dot"></span>WPP Media</div>
@@ -209,8 +212,8 @@ function Sidebar({ route }) {
     </div>
     <nav class="nav" aria-label="Main">
       <div class="nav-label">Briefs</div>
-      ${mine.map((q) => html`<a href=${`#/?tab=${q.key}`} class=${tab === q.key ? 'active' : ''}>
-        <${Icon} name=${q.icon} />${q.label}${briefs && html`<span class="count">${counts[q.key]}</span>`}</a>`)}
+      ${mine.filter((q) => !q.group).map(link)}
+      ${qa.length > 0 && html`<div class="nav-label">Quality assurance</div>${qa.map(link)}`}
       <div class="nav-label">Insights</div>
       <a href="#/score" class=${route.name === 'score' ? 'active' : ''}><${Icon} name="chart" />Scorecards</a>
       ${me.isAdmin && html`<a href="#/admin" class=${route.name === 'admin' ? 'active' : ''}><${Icon} name="settings" />User management</a>`}
