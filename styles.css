@@ -481,6 +481,16 @@ a.tile:hover { border-color: var(--wpp-navy); }
 .signin .form { padding: 56px; display: flex; flex-direction: column; justify-content: center; max-width: 520px; }
 .signin .form h2 { font-size: 28px; margin: 0 0 8px; }
 
+.who-card {
+  display: flex; gap: 28px; flex-wrap: wrap; align-items: flex-start;
+  padding: 14px 16px; background: var(--surface-2); border-left: 3px solid var(--lime);
+}
+.who-card .label { margin-bottom: 4px; }
+.role-chip {
+  display: inline-block; padding: 3px 12px; border-radius: var(--radius-full);
+  background: var(--wpp-navy); color: var(--white); font-size: 13px; font-weight: 700;
+}
+
 .modal-back { position: fixed; inset: 0; background: rgba(0, 0, 80, 0.45); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 16px; }
 .modal { background: var(--white); border: 1px solid var(--wpp-navy); width: min(520px, 100%); padding: 24px; }
 .modal h2 { margin: 0 0 8px; font-size: 20px; }

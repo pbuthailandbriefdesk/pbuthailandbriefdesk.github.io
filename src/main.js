@@ -77,24 +77,23 @@ function SignIn() {
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
+  const [team, setTeam] = useState(null);
+  useEffect(() => { d.list('desk_team').then(setTeam).catch(() => setTeam([])); }, []);
 
-  // Name and role come from User management (desk_team), never from the person.
+  // Name and role come from User management (desk_team) and are shown, not chosen.
+  const em = email.trim().toLowerCase();
+  const looksComplete = /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/.test(em);
+  const match = team && team.find((t) => lower(t.email) === em);
+  const admins = (team || []).filter((t) => t.role === 'Admin').map((t) => t.name || t.email).join(' or ');
+  const roleLabel = (r) => (r === 'Gatekeeper' ? 'Gate' : ['Planner', 'Ad Ops', 'Buyer', 'Admin'].includes(r) ? r : 'Planner');
+
   const submit = async (e) => {
     e.preventDefault();
-    const em = email.trim().toLowerCase();
     if (!ALLOWED_DOMAINS.includes(em.split('@')[1])) { setErr(`Use your ${ALLOWED_DOMAINS.map((x) => '@' + x).join(' or ')} address.`); return; }
+    if (!match) { setErr(`${em} isn't registered yet. Ask an Admin${admins ? ` (${admins})` : ''} to add you in User management.`); return; }
     setErr(null);
     setBusy(true);
-    try {
-      const team = await d.list('desk_team');
-      const row = team.find((t) => lower(t.email) === em);
-      if (!row) {
-        const admins = team.filter((t) => t.role === 'Admin').map((t) => t.name || t.email).join(' or ');
-        setErr(`${em} isn't registered yet. Ask an Admin${admins ? ` (${admins})` : ''} to add you in User management.`);
-        return;
-      }
-      await d.signIn(em, row.name || '');
-    } catch (ex) { setErr(ex.message); } finally { setBusy(false); }
+    try { await d.signIn(em, match.name || ''); } catch (ex) { setErr(ex.message); } finally { setBusy(false); }
   };
 
   return html`<div class="signin">
@@ -112,9 +111,17 @@ function SignIn() {
       <p class="muted">${d.mode === 'demo' ? 'Demo data in this browser only. ' : ''}Your name and role come from User management.</p>
       <form onSubmit=${submit} class="stack" style="gap:14px">
         <div class="field"><label for="em">Work email</label>
-          <input id="em" class="input" type="email" required autocomplete="email" placeholder="name@wppmedia.com" value=${email} onInput=${(e) => setEmail(e.currentTarget.value)} /></div>
+          <input id="em" class="input" type="email" required autocomplete="email" placeholder="name@wppmedia.com" value=${email}
+            onInput=${(e) => { setEmail(e.currentTarget.value); setErr(null); }} /></div>
+        ${match ? html`<div class="who-card" aria-live="polite">
+            <div><div class="label">Name</div><div class="strong">${match.name || '—'}</div></div>
+            <div><div class="label">Role</div><span class="role-chip">${roleLabel(match.role)}</span></div>
+            ${match.team && html`<div><div class="label">Team</div><div>${match.team}</div></div>`}
+          </div>`
+          : looksComplete && team ? html`<div class="callout warn small" aria-live="polite">Not registered yet. Ask an Admin${admins ? ` (${admins})` : ''} to add you in User management.</div>`
+          : null}
         ${(err || authError) && html`<div class="callout err">${err || authError}</div>`}
-        <div><button class="btn btn-primary btn-lg btn-arrow" type="submit" disabled=${busy}>${busy ? 'Checking…' : 'Continue'}</button></div>
+        <div><button class="btn btn-primary btn-lg btn-arrow" type="submit" disabled=${busy || !match}>${busy ? 'Opening…' : 'Continue'}</button></div>
       </form>
     </div>
   </div>`;
