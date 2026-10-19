@@ -1,9 +1,9 @@
 // scrDetail: history and set-up actions (accept, set up, take over, change requests, cancel).
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import {
-  acceptSetup, deleteOrCancel, doneToast, logChange, logNamingFix, markSetUp, takeOver,
+  acceptSetup, deleteOrCancel, doneToast, logChange, logNamingFix, sendToQa, takeOver,
 } from '../data/actions.js';
-import { app, toast, useBrief, useCrumbs, useStore } from '../data/store.js';
+import { app, db, toast, useBrief, useCrumbs, useStore } from '../data/store.js';
 import { LOCKED_STATUSES, OPT } from '../lib/constants.js';
 import { coalesce, fmtTs, isBlank, num, singleLine } from '../lib/util.js';
 import { briefPath, go } from '../router.js';
@@ -81,7 +81,10 @@ export function Detail({ route }) {
           <div class="card-head"><h3>Actions</h3></div>
           <div class="card-body stack" style="gap:12px">
             ${show.accept && html`<${ActionButton} cls="btn btn-primary btn-lg btn-arrow" onClick=${() => acceptSetup(store)}>Accept this set-up<//>`}
-            ${show.setUp && html`<${ActionButton} cls="btn btn-primary btn-lg btn-arrow" onClick=${() => markSetUp(store)}>Mark as set up in DV360<//>`}
+            ${show.setUp && b.qa_result === 'Fail' && html`<${QaFailNote} b=${b} />`}
+            ${show.setUp && html`<${ActionButton} cls="btn btn-primary btn-lg btn-arrow" onClick=${async () => { const mail = await sendToQa(store); doneToast('Sent to P2P QA. The campaign is marked set up once QA passes.', mail); }}>Send to P2P QA<//>`}
+            ${show.setUp && html`<div class="small muted">Set up in DV360 first. QA compares the DV360 export with this brief; only a QA pass marks it set up.</div>`}
+            ${b.status === 'In QA' && html`<div class="callout small">With P2P QA since ${fmtTs(b.qa_requested_at)}.${me.isQA ? html` <a href=${briefPath(b.brief_id, 'qa')}>Open P2P QA</a>` : ''}</div>`}
             ${show.takeOver && html`<${ActionButton} cls="btn" onClick=${() => takeOver(store)}>Take over this set-up<//>`}
             ${!show.accept && !show.setUp && !show.takeOver && !locked && !show.cancel && html`<div class="muted small">No actions for you on this brief right now.</div>`}
 
@@ -159,5 +162,20 @@ function DV360Ids({ st, store, canEdit }) {
         </div>`)}
       </div>`}
     </div>
+  </div>`;
+}
+
+// Shown to the Buyer after a failed QA: the blocking findings of the last run.
+function QaFailNote({ b }) {
+  const [run, setRun] = useState(null);
+  useEffect(() => {
+    db().list('qa_runs', { eq: { brief_id: b.brief_id }, order: ['id', 'desc'] }).then((r) => setRun(r[0] || null)).catch(() => {});
+  }, [b.brief_id, b.qa_done_at]);
+  const fails = (run?.findings || []).filter((f) => f.status === 'FAIL');
+  return html`<div class="callout err small">
+    <strong>P2P QA failed${run ? ` on ${fmtTs(run.at)}` : ''}.</strong> Fix these in DV360, then send to QA again.
+    ${fails.length > 0 && html`<ul style="margin:6px 0 0;padding-left:18px">${fails.slice(0, 8).map((f) => html`<li>${f.scope} · ${f.entity}: ${f.parameter} (${f.reason})</li>`)}</ul>`}
+    ${fails.length > 8 && html`<div>…and ${fails.length - 8} more. <a href=${briefPath(b.brief_id, 'qa')}>See the QA report</a></div>`}
+    ${run?.note && html`<div style="margin-top:6px">QA note: ${run.note}</div>`}
   </div>`;
 }

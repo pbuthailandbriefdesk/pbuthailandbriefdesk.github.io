@@ -3,7 +3,7 @@
 const KEY = 'lbd-demo-db-v1';
 const WHO = 'lbd-demo-user-v1';
 const TABLES = ['desk_team', 'brands', 'holidays', 'sdf_defaults', 'briefs', 'brief_events',
-  'brief_ios', 'brief_lines', 'brief_ad_groups', 'brief_ads', 'notifications', 'dv360_campaigns'];
+  'brief_ios', 'brief_lines', 'brief_ad_groups', 'brief_ads', 'notifications', 'dv360_campaigns', 'qa_runs'];
 
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },

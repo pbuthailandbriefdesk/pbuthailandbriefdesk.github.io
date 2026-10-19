@@ -67,12 +67,14 @@ export function Score() {
   const setupHours = setUp.map((b) => hours(b.locked_at, b.setup_done_at)).filter((x) => x !== null);
   const onTime = setUp.filter((b) => !isBlank(goLive(b)) && tsToBkkDate(b.setup_done_at) <= goLive(b));
   const today = todayBkk();
+  const qaDone = locked.filter((b) => !isBlank(b.qa_passed_first_time));
   const overdue = scoped.filter((b) => ['Locked', 'In set-up'].includes(b.status) && !isBlank(goLive(b)) && goLive(b) < today);
   const buyers = [
     { t: `Picked up within ${BUYER_PICKUP_HOURS} h of Lock`, v: share(pickup.filter((h) => h <= BUYER_PICKUP_HOURS).length, pickup.length), fmt: pct, target: '≥ 90%', ok: (v) => v >= 0.9 },
     { t: 'Set up on or before go-live', v: share(onTime.length, setUp.length), fmt: pct, target: '≥ 95%', ok: (v) => v >= 0.95,
       note: setUp.length ? `${setUp.length - onTime.length} set up late` : null },
     { t: 'Average Lock → set up', v: avg(setupHours), fmt: hrs, target: `≤ ${BUYER_SETUP_HOURS} h`, ok: (v) => v <= BUYER_SETUP_HOURS },
+    { t: 'P2P QA passed first time', v: share(qaDone.filter((b) => b.qa_passed_first_time === 'Yes').length, qaDone.length), fmt: pct, target: '≥ 90%', ok: (v) => v >= 0.9 },
     { t: 'Overdue now (past go-live, not set up)', v: overdue.length, fmt: (v) => String(v), target: '0', ok: (v) => v === 0, live: true,
       note: overdue.length ? overdue.map((b) => b.brief_id).slice(0, 3).join(', ') + (overdue.length > 3 ? '…' : '') : null },
   ];
@@ -94,7 +96,8 @@ export function Score() {
     { k: 'With Ad Ops', who: 'Ad Ops', v: stage(submitted, 'sent_to_ao_at', 'taxonomy_done_at') },
     { k: 'At the Gate', who: 'Gate', v: stage(submitted, 'taxonomy_done_at', 'gate_replied_at') },
     { k: 'Waiting for a buyer', who: 'Buyers', v: stage(locked, 'locked_at', 'buyer_accepted_at') },
-    { k: 'In set-up', who: 'Buyers', v: stage(locked, 'buyer_accepted_at', 'setup_done_at') },
+    { k: 'In set-up', who: 'Buyers', v: avg(locked.map((r) => hours(r.buyer_accepted_at, r.qa_requested_at || r.setup_done_at)).filter((x) => x !== null && x >= 0)) },
+    { k: 'In P2P QA', who: 'QA', v: stage(locked, 'qa_requested_at', 'qa_done_at') },
   ];
   const maxStage = Math.max(1, ...stages.map((s) => s.v || 0));
   const period = `${month === 'all' ? '' : MONTHS[Number(month) - 1] + ' '}${year}`;
@@ -153,7 +156,7 @@ export function Score() {
       <div class="card-body stack" style="gap:12px">
         ${stages.map((s) => html`<div class="stage-row">
           <div class="sk">${s.k}<span class="muted small"> · ${s.who}</span></div>
-          <div class="sbar"><i class=${s.who === 'Buyers' ? 'b' : s.who === 'Gate' ? 'g' : 'a'} style=${`width:${s.v === null ? 0 : Math.max(2, (s.v / maxStage) * 100)}%`}></i></div>
+          <div class="sbar"><i class=${s.who === 'Buyers' ? 'b' : s.who === 'Gate' ? 'g' : s.who === 'QA' ? 'q' : 'a'} style=${`width:${s.v === null ? 0 : Math.max(2, (s.v / maxStage) * 100)}%`}></i></div>
           <div class="sv">${hrs(s.v)}</div>
         </div>`)}
         <div class="small muted">Planner time is not shown here: lead time is scored in working days above.</div>

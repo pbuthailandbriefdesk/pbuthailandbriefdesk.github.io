@@ -271,6 +271,21 @@ a.tile:hover { border-color: var(--wpp-navy); }
 .score-card.missed { border-top: 4px solid var(--danger); }
 .score-card.none { border-top: 4px solid var(--grey-100); }
 
+/* P2P QA */
+.qa-summary { display: flex; flex-wrap: wrap; gap: 18px 32px; align-items: center; }
+.qa-overall { display: flex; gap: 10px; align-items: center; padding: 10px 16px; border: 1px solid var(--rule); }
+.qa-overall span { font-size: 26px; }
+.qa-overall.FAIL { border-color: var(--danger); background: var(--danger-tint); }
+.qa-overall.PASS { border-color: var(--lime); background: #f2fbe8; }
+.qa-overall.REVIEW { border-color: #b9a400; background: #fffde6; }
+.qa-decision.ok { color: var(--ok); }
+.qa-decision.bad { color: var(--danger); }
+.qa-decision.mid { color: #8a6d00; }
+.qa-table td { vertical-align: top; }
+.qa-table .qa-val { max-width: 260px; word-break: break-word; }
+.qa-table tr.qa-FAIL td:first-child { color: var(--danger); }
+.qa-table tr.qa-FAIL { background: #fff8f9; }
+
 /* Scorecards */
 .role-score { padding: 18px 20px; border: 1px solid var(--rule); background: var(--white); border-top: 4px solid var(--grey-100); }
 .role-score.good { border-top-color: var(--lime); }
@@ -300,6 +315,7 @@ a.tile:hover { border-color: var(--wpp-navy); }
 .stage-row .sbar i { position: absolute; inset: 0 auto 0 0; background: var(--cornflower); }
 .stage-row .sbar i.g { background: var(--wpp-navy); }
 .stage-row .sbar i.b { background: var(--lime); }
+.stage-row .sbar i.q { background: #e0a800; }
 .stage-row .sv { text-align: right; font-weight: 700; }
 @media (max-width: 900px) { .stage-row { grid-template-columns: 1fr 60px; } .stage-row .sbar { grid-column: 1 / -1; grid-row: 2; } }
 
@@ -322,6 +338,8 @@ a.tile:hover { border-color: var(--wpp-navy); }
 .pill.s-locked::before { background: #5ca61b; opacity: 1; }
 .pill.s-setup-in { background: #eaf0ff; }
 .pill.s-setup-in::before { background: var(--periwinkle); opacity: 1; }
+.pill.s-qa { background: #fff6d6; }
+.pill.s-qa::before { background: #e0a800; opacity: 1; }
 .pill.s-setup { background: var(--wpp-navy); color: var(--white); }
 .pill.s-setup::before { background: var(--lime); opacity: 1; }
 .pill.s-cancelled { background: var(--white); border: 1px solid var(--rule); color: var(--ink-faint); text-decoration: line-through; }

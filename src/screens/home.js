@@ -18,10 +18,11 @@ export async function loadBriefs() {
 
 const QUEUE_SUB = {
   Mine: 'Briefs you planned, newest first. Cancelled briefs are hidden.',
-  AO: 'Submitted briefs waiting for Ad Ops taxonomy, actions and DV360 IDs.',
+  AO: 'Submitted briefs waiting for Ad Ops taxonomy and actions.',
   Gate: 'Briefs with complete taxonomy, waiting for the 14-item Gate check.',
   Setup: 'Locked briefs waiting for a buyer, and set-ups you have accepted.',
-  Locked: 'Everything that passed the Gate: locked, in set-up or set up.',
+  QA: 'Campaigns the Buyer has set up, waiting for P2P QA against the brief.',
+  Locked: 'Everything that passed the Gate: locked, in set-up, in QA or set up.',
   All: 'Every brief in the Desk.',
 };
 
@@ -69,6 +70,7 @@ export function Home({ route }) {
     { k: 'With the Gate', v: n('With Gatekeeper'), note: 'Waiting for the 14-item check', tab: 'Gate', accent: tab === 'Gate' },
     { k: 'Waiting for a buyer', v: n('Locked'), note: 'Locked, SLA running', tab: 'Setup', accent: tab === 'Setup' },
     { k: 'In set-up', v: n('In set-up'), note: 'Accepted by a buyer', tab: 'Locked' },
+    { k: 'In P2P QA', v: n('In QA'), note: 'Set up, waiting for QA', tab: 'QA', accent: tab === 'QA' },
     { k: 'Set up', v: n('Set up'), note: 'Live in DV360', tab: 'Locked' },
   ].filter((t) => allowed.some((q) => q.key === t.tab));
 

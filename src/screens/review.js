@@ -71,7 +71,8 @@ export function Review({ route }) {
           : ['With Ad Ops', 'With Gatekeeper'].includes(b.status) && mine ? 'Viewing only. Edit brief pulls it back to you; nothing counts until you submit again.'
             : LOCKED_STATUSES.includes(b.status) ? 'Locked brief. Changes go through Request a change (major change = new version).' : 'Viewing only.';
   const next = b.status === 'With Ad Ops' && me.isAdOps ? ['adops', 'Open Ad Ops taxonomy']
-    : b.status === 'With Gatekeeper' && me.isGate ? ['gate', 'Open Gate review'] : ['detail', 'History & set-up'];
+    : b.status === 'With Gatekeeper' && me.isGate ? ['gate', 'Open Gate review']
+      : b.status === 'In QA' && me.isQA ? ['qa', 'Open P2P QA'] : ['detail', 'History & set-up'];
   const submit = async () => {
     if (!testMode && d.open > 0) return toast('Not ready: fix the checks marked ✗ first.', 'error');
     if (!testMode && d.lead < MIN_LEAD_DAYS && !(b.is_exception === 'Yes' && !isBlank(b.exception_approver))) {

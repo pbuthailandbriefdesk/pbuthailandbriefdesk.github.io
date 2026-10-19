@@ -12,6 +12,7 @@ const ROLE_HELP = {
   'Ad Ops': 'Taxonomy only: names, actions, DV360 IDs.',
   Gatekeeper: 'Everything, including the Gate check and this page.',
   Buyer: 'Set-up only: Set-up queue and Locked / set up.',
+  QA: 'P2P QA only: checks the DV360 set-up against the brief before launch.',
   Admin: 'Everything, including this page.',
 };
 // Teams: "All" means CPD + Non-CPD.

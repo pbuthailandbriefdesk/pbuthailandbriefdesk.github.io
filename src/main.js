@@ -14,6 +14,7 @@ import { Gate } from './screens/gate.js';
 import { Detail } from './screens/detail.js';
 import { Score } from './screens/score.js';
 import { Admin } from './screens/admin.js';
+import { Qa } from './screens/qa.js';
 
 // Counts in-flight writes so the top bar can show "Saving…".
 function trackWrites(backend) {
@@ -232,7 +233,7 @@ function Crumbs() {
   </nav>`;
 }
 
-const SCREENS = { home: Home, edit: BriefEditor, review: Review, adops: AdOps, gate: Gate, detail: Detail, score: Score, admin: Admin };
+const SCREENS = { home: Home, edit: BriefEditor, review: Review, adops: AdOps, gate: Gate, qa: Qa, detail: Detail, score: Score, admin: Admin };
 
 function App() {
   const { ready, me } = useStore(app);

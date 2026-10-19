@@ -40,7 +40,7 @@ export function BriefEditor({ route }) {
       <strong>Returned by the Gate.</strong> Gaps to fix: ${b.gate_gaps}</div>`}
     ${!editable && html`<div class="callout warn" style="margin-bottom:18px">
       ${mine
-        ? html`This brief is <strong>${b.status}</strong>, so it can't be edited here. ${['Locked', 'In set-up', 'Set up'].includes(b.status) ? 'Use Request a change on the History & set-up page.' : 'Pull it back from the Review page to edit it.'}`
+        ? html`This brief is <strong>${b.status}</strong>, so it can't be edited here. ${['Locked', 'In set-up', 'In QA', 'Set up'].includes(b.status) ? 'Use Request a change on the History & set-up page.' : 'Pull it back from the Review page to edit it.'}`
         : 'Only the planner who owns this brief (or an Admin) can edit it.'}
       <a href=${briefPath(b.brief_id)}> Go to the brief summary</a></div>`}
 

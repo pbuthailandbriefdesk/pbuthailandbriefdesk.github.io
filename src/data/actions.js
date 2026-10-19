@@ -133,6 +133,35 @@ export async function markSetUp(store) {
   toast('Marked as set up', 'success');
 }
 
+// P2P QA (added 2026-10-19): the Buyer hands a finished set-up to QA instead of marking it set up.
+export async function sendToQa(store) {
+  const nb = await store.patchBrief({ status: 'In QA', qa_requested_at: nowIso() });
+  await store.event('Sent to P2P QA', 'Buyer finished the DV360 set-up');
+  return notify(teamEmails('QA'), `Ready for P2P QA: ${nb.brief_id} · ${nb.brand || ''}`,
+    `The buyer finished the DV360 set-up. Please compare the DV360 export with the brief: ${nb.campaign_taxonomy || ''}`, nb.brief_id);
+}
+
+// QA decision. Pass → Set up (ready to launch). Fail → back to the Buyer (In set-up).
+export async function qaDecision(store, pass, run) {
+  const { b } = store.get();
+  const first = isBlank(b.qa_passed_first_time);
+  await db().insert('qa_runs', { brief_id: b.brief_id, by_email: me().email, at: nowIso(), result: pass ? 'Pass' : 'Fail', ...run });
+  const nb = await store.patchBrief({
+    status: pass ? 'Set up' : 'In set-up',
+    qa_result: pass ? 'Pass' : 'Fail',
+    qa_done_at: nowIso(),
+    qa_email: me().email,
+    qa_attempts: Number(b.qa_attempts || 0) + 1,
+    qa_passed_first_time: first ? (pass ? 'Yes' : 'No') : b.qa_passed_first_time,
+    ...(pass ? { setup_done_at: nowIso() } : {}),
+  });
+  const c = run.counts || {};
+  await store.event(pass ? 'P2P QA passed · set up' : 'P2P QA failed · back to Buyer',
+    `${run.decision || ''}  ·  ${c.fail || 0} fail · ${c.review || 0} review · ${c.reminder || 0} manual${run.note ? `  ·  ${run.note}` : ''}`);
+  return notify(nb.buyer_email, pass ? `P2P QA passed: ${nb.brief_id}` : `P2P QA failed: ${nb.brief_id}`,
+    pass ? 'The campaign passed P2P QA and is marked set up.' : `Fix the QA findings, then send it to QA again. ${c.fail || 0} checks failed.${run.note ? ` Note: ${run.note}` : ''}`, nb.brief_id);
+}
+
 // scrDetail.dtTakeOver
 export async function takeOver(store) {
   await store.patchBrief({ buyer_email: me().email, buyer_name: me().name, buyer_accepted_at: nowIso() });

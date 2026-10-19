@@ -7,12 +7,12 @@ export const AO_TURNAROUND_HOURS = 24; // nfAOTurnaroundHours
 export const BUYER_PICKUP_HOURS = 24;  // a buyer accepts a locked brief within this many hours
 export const BUYER_SETUP_HOURS = 72;   // average Lock → set up in DV360
 
-export const ROLES = ['Planner', 'Ad Ops', 'Gatekeeper', 'Buyer', 'Admin'];
+export const ROLES = ['Planner', 'Ad Ops', 'Gatekeeper', 'Buyer', 'QA', 'Admin'];
 export const AD_OPS_ROLES = ['Ad Ops', 'Admin'];        // nfIsAdOps
 export const GATE_ROLES = ['Gatekeeper', 'Buyer', 'Admin']; // nfIsGate
 
-export const STATUSES = ['Draft', 'Returned', 'With Ad Ops', 'With Gatekeeper', 'Locked', 'In set-up', 'Set up', 'Cancelled'];
-export const LOCKED_STATUSES = ['Locked', 'In set-up', 'Set up'];
+export const STATUSES = ['Draft', 'Returned', 'With Ad Ops', 'With Gatekeeper', 'Locked', 'In set-up', 'In QA', 'Set up', 'Cancelled'];
+export const LOCKED_STATUSES = ['Locked', 'In set-up', 'In QA', 'Set up'];
 
 export const OBJS = [
   { name: 'Raise_awareness_of_my_brand_or_product', abv: 'aw' },

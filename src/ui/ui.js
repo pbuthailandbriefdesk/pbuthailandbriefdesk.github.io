@@ -116,7 +116,7 @@ export function Select({ value, options, onSave, disabled, allowEmpty = true, la
 
 const STATUS_CLASS = {
   Draft: 's-draft', Returned: 's-returned', 'With Ad Ops': 's-adops', 'With Gatekeeper': 's-gate',
-  Locked: 's-locked', 'In set-up': 's-setup-in', 'Set up': 's-setup', Cancelled: 's-cancelled',
+  Locked: 's-locked', 'In set-up': 's-setup-in', 'In QA': 's-qa', 'Set up': 's-setup', Cancelled: 's-cancelled',
 };
 export const StatusPill = ({ status }) => html`<span class=${`pill ${STATUS_CLASS[status] || ''}`}>${status || '—'}</span>`;
 

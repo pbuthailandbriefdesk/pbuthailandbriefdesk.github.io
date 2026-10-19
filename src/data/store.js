@@ -49,12 +49,13 @@ export function profileFor(session, team) {
   const row = team.find((t) => lower(t.email) === email);
   // Name and role are managed by Admins in User management (desk_team).
   // Old SharePoint roles (e.g. "Standard") count as Planner.
-  const role = ['Planner', 'Ad Ops', 'Gatekeeper', 'Buyer', 'Admin'].includes(row?.role) ? row.role : 'Planner';
+  const role = ['Planner', 'Ad Ops', 'Gatekeeper', 'Buyer', 'QA', 'Admin'].includes(row?.role) ? row.role : 'Planner';
   // Permissions (agreed 2026-10-19):
   //   Admin, Gatekeeper  everything, including User management
   //   Buyer              set-up only (Set-up queue, Locked / set up, SDF)
   //   Planner            create and manage their own briefs only
   //   Ad Ops             taxonomy only (Ad Ops queue, SDF)
+  //   QA                 P2P QA only (QA queue: compare the DV360 export with the brief)
   const isSuper = role === 'Admin' || role === 'Gatekeeper';
   return {
     email,
@@ -67,6 +68,7 @@ export function profileFor(session, team) {
     isGate: isSuper,                           // run the Brief Gate
     isAdOps: role === 'Ad Ops' || isSuper,     // taxonomy
     isBuyer: role === 'Buyer' || isSuper,      // accept / take over / mark set up
+    isQA: role === 'QA' || isSuper,            // P2P QA after set-up
     canPlan: role === 'Planner' || isSuper,    // create briefs
     canSdf: role === 'Ad Ops' || role === 'Buyer' || isSuper,
     hasName: !isBlank(session.fullName) || !isBlank(row?.name),
