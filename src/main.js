@@ -196,32 +196,46 @@ function SavingIndicator() {
   return html`<span class="saving">${saving > 0 ? 'Saving…' : recent ? 'All changes saved' : ''}</span>`;
 }
 
-function Sidebar({ route }) {
+// Collapsed sidebar (icons only) is remembered per browser.
+const NAV_KEY = 'lbd-nav-collapsed';
+const readCollapsed = () => { try { return localStorage.getItem(NAV_KEY) === '1'; } catch { return false; } };
+const saveCollapsed = (v) => { try { localStorage.setItem(NAV_KEY, v ? '1' : '0'); } catch { /* private mode */ } };
+
+function Sidebar({ route, collapsed, onToggle }) {
   const { me, briefs, db: d } = useStore(app);
   const mine = queuesFor(me);
   const counts = Object.fromEntries(mine.map((q) => [q.key, (briefs || []).filter((b) => q.test(b, me)).length]));
   const tab = route.name === 'home' ? (mine.some((q) => q.key === route.query.tab) ? route.query.tab : homeQueue(me)) : null;
   const qa = mine.filter((q) => q.group === 'qa');
-  const link = (q) => html`<a href=${`#/?tab=${q.key}`} class=${tab === q.key || (q.key === 'QA' && route.name === 'qa') ? 'active' : ''}>
-    <${Icon} name=${q.icon} />${q.label}${briefs && html`<span class="count">${counts[q.key]}</span>`}</a>`;
+  const tip = (label, n) => (collapsed ? `${label}${n != null ? ` (${n})` : ''}` : undefined);
+  const link = (q) => html`<a href=${`#/?tab=${q.key}`} title=${tip(q.label, briefs && counts[q.key])}
+    class=${tab === q.key || (q.key === 'QA' && route.name === 'qa') ? 'active' : ''}>
+    <${Icon} name=${q.icon} /><span class="nav-text">${q.label}</span>${briefs && html`<span class="count">${counts[q.key]}</span>`}</a>`;
+  const initials = (me.name || me.email || '?').split(/[\s.@]+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
   return html`<aside class="sidebar">
     <div class="brand">
-      <div class="eyebrow"><span class="dot"></span>WPP Media</div>
-      <div class="brand-title">L'Oréal Brief Desk</div>
-      <div class="brand-sub">Programmatic · Thailand</div>
+      <div class="brand-text">
+        <div class="eyebrow"><span class="dot"></span>WPP Media</div>
+        <div class="brand-title">L'Oréal Brief Desk</div>
+        <div class="brand-sub">Programmatic · Thailand</div>
+      </div>
+      <button class="nav-toggle" onClick=${onToggle} aria-expanded=${!collapsed}
+        title=${collapsed ? 'Expand menu' : 'Collapse menu'} aria-label=${collapsed ? 'Expand menu' : 'Collapse menu'}>
+        <${Icon} name=${collapsed ? 'expand' : 'collapse'} /></button>
     </div>
     <nav class="nav" aria-label="Main">
       <div class="nav-label">Briefs</div>
       ${mine.filter((q) => !q.group).map(link)}
       ${qa.length > 0 && html`<div class="nav-label">Quality assurance</div>${qa.map(link)}`}
       <div class="nav-label">Insights</div>
-      <a href="#/score" class=${route.name === 'score' ? 'active' : ''}><${Icon} name="chart" />Scorecards</a>
-      ${me.isAdmin && html`<a href="#/admin" class=${route.name === 'admin' ? 'active' : ''}><${Icon} name="settings" />User management</a>`}
+      <a href="#/score" title=${tip('Scorecards')} class=${route.name === 'score' ? 'active' : ''}><${Icon} name="chart" /><span class="nav-text">Scorecards</span></a>
+      ${me.isAdmin && html`<a href="#/admin" title=${tip('User management')} class=${route.name === 'admin' ? 'active' : ''}><${Icon} name="settings" /><span class="nav-text">User management</span></a>`}
     </nav>
     <div class="sidebar-foot">
+      <div class="avatar" title=${`${me.name} · ${me.role}`}>${initials}</div>
       <div class="who">${me.name}</div>
       <div class="role">${me.role}${me.team ? ` · ${me.team}` : ''}</div>
-      <button onClick=${() => d.signOut()}>Switch user</button>
+      <button onClick=${() => d.signOut()} title=${tip('Switch user')}><${Icon} name="logout" /><span class="nav-text">Switch user</span></button>
       ${d.mode === 'demo' && html`<div><span class="demo-badge">Demo data · this browser only</span></div>`}
     </div>
   </aside>`;
@@ -241,11 +255,13 @@ const SCREENS = { home: Home, edit: BriefEditor, review: Review, adops: AdOps, g
 function App() {
   const { ready, me } = useStore(app);
   const route = useRoute();
+  const [collapsed, setCollapsed] = useState(readCollapsed);
+  const toggleNav = () => setCollapsed((v) => { saveCollapsed(!v); return !v; });
   if (!ready) return html`<${Loading} text="Loading the Brief Desk…" />`;
   if (!me) return html`<${SignIn} /><${Toasts} />`;
   const Screen = SCREENS[route.name] || Home;
-  return html`<div class="shell">
-    <${Sidebar} route=${route} />
+  return html`<div class=${`shell${collapsed ? ' nav-collapsed' : ''}`}>
+    <${Sidebar} route=${route} collapsed=${collapsed} onToggle=${toggleNav} />
     <main class="main">
       <div class="topbar">
         <${Crumbs} />

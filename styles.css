@@ -108,6 +108,45 @@ button, input, select, textarea { font: inherit; color: inherit; }
   padding: 6px 12px; cursor: pointer; font-size: 12px;
 }
 .sidebar-foot button:hover { border-color: var(--white); }
+.sidebar-foot button { display: inline-flex; align-items: center; gap: 6px; }
+.sidebar-foot button svg { width: 14px; height: 14px; }
+.sidebar-foot .avatar { display: none; }
+
+/* Collapse / expand toggle */
+.brand { position: relative; }
+.brand-text { flex: 1; min-width: 0; }
+.nav-toggle {
+  position: absolute; top: 18px; right: 14px; width: 30px; height: 30px; padding: 0; display: grid; place-items: center; cursor: pointer;
+  background: none; border: 1px solid rgba(255, 255, 255, 0.3); color: var(--white);
+}
+.nav-toggle:hover { border-color: var(--white); background: rgba(255, 255, 255, 0.08); }
+.nav-toggle svg { width: 16px; height: 16px; }
+.shell { transition: grid-template-columns 0.2s ease; }
+.sidebar { overflow-x: hidden; }
+
+@media (min-width: 901px) {
+  .shell.nav-collapsed { --sidebar-w: 72px; }
+  .nav-collapsed .brand { display: flex; justify-content: center; padding: 18px 0; }
+  .nav-collapsed .nav-toggle { position: static; }
+  .nav-collapsed .brand-text,
+  .nav-collapsed .nav-text,
+  .nav-collapsed .sidebar-foot .who,
+  .nav-collapsed .sidebar-foot .role,
+  .nav-collapsed .demo-badge { display: none; }
+  .nav-collapsed .nav { padding: 10px 8px; }
+  .nav-collapsed .nav-label { height: 1px; padding: 0; margin: 10px 8px; overflow: hidden; font-size: 0; background: rgba(255, 255, 255, 0.18); }
+  .nav-collapsed .nav a { position: relative; justify-content: center; padding: 11px 0; }
+  .nav-collapsed .nav a .count {
+    position: absolute; top: 1px; right: 0; margin: 0; min-width: 18px; padding: 0 5px;
+    font-size: 10px; line-height: 16px;
+  }
+  .nav-collapsed .sidebar-foot { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 0 18px; }
+  .nav-collapsed .sidebar-foot .avatar {
+    display: grid; place-items: center; width: 36px; height: 36px; border-radius: var(--radius-full);
+    background: var(--lime); color: var(--wpp-navy); font-weight: 700; font-size: 13px;
+  }
+  .nav-collapsed .sidebar-foot button { padding: 7px 9px; }
+}
 .demo-badge {
   display: inline-block; margin-top: 10px; padding: 2px 8px; border-radius: var(--radius-full);
   background: var(--yellow); color: var(--wpp-navy); font-size: 11px; font-weight: 700;
@@ -567,6 +606,7 @@ a.tile:hover { border-color: var(--wpp-navy); }
   .nav a { border-left: none; border-bottom: 3px solid transparent; white-space: nowrap; }
   .nav a.active { border-bottom-color: var(--lime); }
   .brand { padding: 14px 16px; }
+  .nav-toggle { display: none; }
   .brand-title { font-size: 17px; }
   .sidebar-foot { display: flex; align-items: center; gap: 12px; padding: 10px 16px; }
   .sidebar-foot .role { margin: 0; }

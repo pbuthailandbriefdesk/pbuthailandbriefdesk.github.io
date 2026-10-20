@@ -33,6 +33,8 @@ const P = {
   file: 'M14 3H6v18h12V7zM14 3v4h4',
   undo: 'M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3',
   logout: 'M15 4h4v16h-4M10 17l5-5-5-5M15 12H3',
+  collapse: 'M11 17l-5-5 5-5M18 17l-5-5 5-5',
+  expand: 'M13 17l5-5-5-5M6 17l5-5-5-5',
 };
 export const Icon = ({ name, ...rest }) => html`
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ...${rest}>
