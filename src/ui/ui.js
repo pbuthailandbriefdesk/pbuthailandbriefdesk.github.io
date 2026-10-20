@@ -34,6 +34,7 @@ const P = {
   undo: 'M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3',
   logout: 'M15 4h4v16h-4M10 17l5-5-5-5M15 12H3',
   collapse: 'M11 17l-5-5 5-5M18 17l-5-5 5-5',
+  menu: 'M4 6h16M4 12h16M4 18h16',
   expand: 'M13 17l5-5-5-5M6 17l5-5-5-5',
 };
 export const Icon = ({ name, ...rest }) => html`

@@ -154,7 +154,7 @@ function DV360Ids({ st, store, canEdit }) {
         ${shown.map((r) => html`<div class=${`ao-item ${r.lvl}`} key=${r.table + r.rec.id} style=${`padding-left:${16 + r.indent * 20}px`}>
           <div class="ao-label"><span class=${`lvl ${r.lvl === 'AD' && num(r.ag_no) === 0 ? 'CR' : r.lvl}`}>${r.lvl === 'AD' && num(r.ag_no) === 0 ? 'CR' : r.lvl}</span>
             <span>${singleLine(r.label)}</span></div>
-          <div class="ao-controls" style="grid-template-columns:minmax(0,1fr) 200px">
+          <div class="ao-controls ids-controls">
             <div class="field"><label>Name</label><div class="code-chip">${r.nm || '–'}</div></div>
             <div class="field"><label>DV360 ID</label><${TextInput} mono value=${r.dvId} disabled=${!canEdit}
               onSave=${(v) => store.patchRow(r.table, r.rec.id, { dv360_id: v })} /></div>

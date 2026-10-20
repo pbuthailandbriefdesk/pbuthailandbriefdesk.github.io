@@ -110,7 +110,7 @@ function Users() {
     <div class="card">
       <div class="card-head"><h3>Add a user</h3></div>
       <form class="card-body" onSubmit=${add}>
-        <div class="grid" style="grid-template-columns:minmax(0,2fr) minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) auto;align-items:end">
+        <div class="grid add-user-grid">
           <div class="field"><label for="nu-email">Work email</label>
             <input id="nu-email" class="input" type="email" required placeholder="name@wppmedia.com" value=${form.email} onInput=${set('email')} /></div>
           <div class="field"><label for="nu-name">Name</label>
@@ -239,7 +239,7 @@ function Dv360Campaigns() {
       <div class="card-head"><h3>Add campaigns from DV360</h3></div>
       <div class="card-body stack" style="gap:12px">
         <div class="small muted">In DV360, open the advertiser's Campaigns list, select the Name and ID columns, copy, and paste them here. One campaign per line. Briefs for this advertiser will then offer these campaigns and pick the matching one automatically.</div>
-        <div class="grid" style="grid-template-columns:minmax(0,1fr) minmax(0,2fr);align-items:start">
+        <div class="grid dv-grid">
           <div class="field"><label for="dv-adv">Advertiser</label>
             <select id="dv-adv" class="select" value=${adv} onChange=${(e) => setAdv(e.currentTarget.value)}>
               ${advertisers.map((b) => html`<option value=${String(b.advertiser_id)}>${advName(b.advertiser_id)} · ${b.advertiser_id}</option>`)}

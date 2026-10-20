@@ -76,7 +76,7 @@ export function Qa({ route }) {
     <//>
     ${!canWork && html`<div class="callout warn" style="margin-bottom:18px">This brief is <strong>${b.status}</strong>${me.isQA ? '' : ' and your role is not QA'}. You can run the comparison, but Pass / Fail is only for briefs in P2P QA.</div>`}
 
-    <div class="split aside-first">
+    <div class="split">
       <div class="stack">
         <${BriefSummary} st=${st} />
 
@@ -113,13 +113,13 @@ export function Qa({ route }) {
             <tbody>
               ${shown.length === 0 && html`<tr><td colspan="6" class="empty">Nothing in this view.</td></tr>`}
               ${shown.map((f) => html`<tr class=${`qa-${f.status}`}>
-                <td class="nowrap strong">${ICON[f.status]} ${f.status}</td>
-                <td><div class="strong">${f.parameter}</div><div class="sub">${f.scope} · <span class="mono">${f.entity}</span></div>
+                <td class="nowrap strong q-status">${ICON[f.status]} ${f.status}</td>
+                <td class="q-item"><div class="strong">${f.parameter}</div><div class="sub">${f.scope} · <span class="mono">${f.entity}</span></div>
                   <div class="sub">${f.reason}${f.action ? ` → ${f.action}` : ''}</div></td>
-                <td class="mono small qa-val">${String(f.planned ?? '–')}</td>
-                <td class="mono small qa-val">${String(f.actual ?? '–')}</td>
-                <td class="small">${f.risk}</td>
-                <td>${(f.status === 'REVIEW' || f.status === 'REMINDER') && html`<label class="small row" style="gap:6px">
+                <td class="mono small qa-val q-brief" data-label="Brief">${String(f.planned ?? '–')}</td>
+                <td class="mono small qa-val q-dv" data-label="DV360">${String(f.actual ?? '–')}</td>
+                <td class="small q-risk">${f.risk}</td>
+                <td class="q-confirm">${(f.status === 'REVIEW' || f.status === 'REMINDER') && html`<label class="small row" style="gap:6px">
                   <input type="checkbox" disabled=${!canWork} checked=${accepted.has(f.i)} onChange=${() => toggle(accepted, setAccepted, f.i)} />Checked</label>`}</td>
               </tr>`)}
             </tbody>

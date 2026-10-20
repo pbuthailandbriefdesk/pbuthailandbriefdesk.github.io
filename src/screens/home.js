@@ -123,17 +123,17 @@ export function Home({ route }) {
         <tbody>
           ${rows.map((b) => html`<tr class="clickable" onClick=${() => go(briefPath(b.brief_id))}
               tabindex="0" onKeyDown=${(e) => { if (e.key === 'Enter') go(briefPath(b.brief_id)); }}>
-            <td><div class="id">${b.brief_id}</div><div class="sub">${coalesce(b.brand, '—')}  ·  ${coalesce(b.team, '—')}</div></td>
-            <td class="camp">${coalesce(b.campaign_taxonomy, b.campaign_name)
+            <td class="c-id"><div class="id">${b.brief_id}</div><div class="sub">${coalesce(b.brand, '—')}  ·  ${coalesce(b.team, '—')}</div></td>
+            <td class="camp c-camp">${coalesce(b.campaign_taxonomy, b.campaign_name)
               ? html`<div class="clamp2 mono" title=${coalesce(b.campaign_taxonomy, b.campaign_name)}>${coalesce(b.campaign_taxonomy, b.campaign_name)}</div>`
               : html`<span class="faint">(no name yet)</span>`}
               ${b.brief_type && b.brief_type !== 'New' && html`<div class="sub">${b.brief_type} brief</div>`}</td>
-            <td class="nowrap">${isBlank(b.launch_date) ? html`<span class="faint">–</span>` : html`${fmtDate(b.launch_date)} – ${fmtDate(b.end_date)}`}</td>
-            <td class="num">${isBlank(b.total_budget) ? html`<span class="faint">–</span>` : `THB ${fmtInt(b.total_budget)}`}</td>
-            <td>${b.planner_name}</td>
-            <td>${isBlank(b.buyer_email) ? html`<span class="faint">–</span>` : coalesce(b.buyer_name, b.buyer_email)}
+            <td class="nowrap c-flight" data-label="Flight">${isBlank(b.launch_date) ? html`<span class="faint">–</span>` : html`${fmtDate(b.launch_date)} – ${fmtDate(b.end_date)}`}</td>
+            <td class="num c-budget" data-label="Budget">${isBlank(b.total_budget) ? html`<span class="faint">–</span>` : `THB ${fmtInt(b.total_budget)}`}</td>
+            <td class="c-planner" data-label="Planner">${b.planner_name}</td>
+            <td class="c-buyer" data-label="Buyer">${isBlank(b.buyer_email) ? html`<span class="faint">–</span>` : coalesce(b.buyer_name, b.buyer_email)}
               <div class="sub">${!isBlank(b.buyer_accepted_at) ? `✓ accepted ${fmtTs(b.buyer_accepted_at)}` : b.status === 'Locked' ? 'waiting for a buyer' : ''}</div></td>
-            <td><${StatusPill} status=${b.status} /></td>
+            <td class="c-status"><${StatusPill} status=${b.status} /></td>
           </tr>`)}
         </tbody>
       </table>

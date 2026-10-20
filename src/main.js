@@ -201,7 +201,7 @@ const NAV_KEY = 'lbd-nav-collapsed';
 const readCollapsed = () => { try { return localStorage.getItem(NAV_KEY) === '1'; } catch { return false; } };
 const saveCollapsed = (v) => { try { localStorage.setItem(NAV_KEY, v ? '1' : '0'); } catch { /* private mode */ } };
 
-function Sidebar({ route, collapsed, onToggle }) {
+function Sidebar({ route, collapsed, onToggle, onClose }) {
   const { me, briefs, db: d } = useStore(app);
   const mine = queuesFor(me);
   const counts = Object.fromEntries(mine.map((q) => [q.key, (briefs || []).filter((b) => q.test(b, me)).length]));
@@ -222,8 +222,9 @@ function Sidebar({ route, collapsed, onToggle }) {
       <button class="nav-toggle" onClick=${onToggle} aria-expanded=${!collapsed}
         title=${collapsed ? 'Expand menu' : 'Collapse menu'} aria-label=${collapsed ? 'Expand menu' : 'Collapse menu'}>
         <${Icon} name=${collapsed ? 'expand' : 'collapse'} /></button>
+      <button class="nav-close" onClick=${onClose} aria-label="Close menu"><${Icon} name="x" /></button>
     </div>
-    <nav class="nav" aria-label="Main">
+    <nav class="nav" aria-label="Main" onClick=${(e) => { if (e.target.closest('a') && onClose) onClose(); }}>
       <div class="nav-label">Briefs</div>
       ${mine.filter((q) => !q.group).map(link)}
       ${qa.length > 0 && html`<div class="nav-label">Quality assurance</div>${qa.map(link)}`}
@@ -257,13 +258,26 @@ function App() {
   const route = useRoute();
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const toggleNav = () => setCollapsed((v) => { saveCollapsed(!v); return !v; });
+  // Phones and tablets: the sidebar is a drawer opened from the ☰ button.
+  const [navOpen, setNavOpen] = useState(false);
+  const routeKey = `${route.name}:${route.briefId || ''}:${JSON.stringify(route.query || {})}`;
+  useEffect(() => setNavOpen(false), [routeKey]);
+  useEffect(() => {
+    document.body.classList.toggle('nav-locked', navOpen);
+    if (!navOpen) return undefined;
+    const onKey = (e) => { if (e.key === 'Escape') setNavOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [navOpen]);
   if (!ready) return html`<${Loading} text="Loading the Brief Desk…" />`;
   if (!me) return html`<${SignIn} /><${Toasts} />`;
   const Screen = SCREENS[route.name] || Home;
-  return html`<div class=${`shell${collapsed ? ' nav-collapsed' : ''}`}>
-    <${Sidebar} route=${route} collapsed=${collapsed} onToggle=${toggleNav} />
+  return html`<div class=${`shell${collapsed ? ' nav-collapsed' : ''}${navOpen ? ' nav-open' : ''}`}>
+    <${Sidebar} route=${route} collapsed=${collapsed} onToggle=${toggleNav} onClose=${() => setNavOpen(false)} />
+    <div class="nav-backdrop" onClick=${() => setNavOpen(false)}></div>
     <main class="main">
       <div class="topbar">
+        <button class="menu-btn" onClick=${() => setNavOpen(true)} aria-label="Open menu" aria-expanded=${navOpen}><${Icon} name="menu" /></button>
         <${Crumbs} />
         <div class="topbar-right"><${SavingIndicator} /><${Notifications} /></div>
       </div>
