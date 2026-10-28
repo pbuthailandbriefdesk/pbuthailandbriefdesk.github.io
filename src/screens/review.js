@@ -8,6 +8,7 @@ import { rowKey } from '../lib/tree.js';
 import { coalesce, diffDays, downloadText, fmtDate, fmtInt, isBlank, num, singleLine, txt } from '../lib/util.js';
 import { briefPath, go } from '../router.js';
 import { ActionButton, ChecksList, CheckSummary, ErrorBox, html, Icon, Loading, PageHead } from '../ui/ui.js';
+import { DuplicateButton } from '../ui/duplicate.js';
 import { briefCrumbs, useDerived } from './common.js';
 import { loadBriefs } from './home.js';
 
@@ -86,7 +87,9 @@ export function Review({ route }) {
 
   return html`<div class="page">
     <${PageHead} eyebrow=${b.brief_id} title=${planning ? 'Review & submit' : 'Brief summary'}
-      sub=${`${coalesce(b.brand, '—')}  ·  ${coalesce(b.campaign_name, '(no campaign name)')}  ·  ${coalesce(b.brief_type, 'New')} brief  ·  ● ${b.status}${num(b.resubmits) > 0 ? `  ·  resubmitted ${txt(b.resubmits)}×` : ''}`} />
+      sub=${`${coalesce(b.brand, '—')}  ·  ${coalesce(b.campaign_name, '(no campaign name)')}  ·  ${coalesce(b.brief_type, 'New')} brief  ·  ● ${b.status}${num(b.resubmits) > 0 ? `  ·  resubmitted ${txt(b.resubmits)}×` : ''}`}>
+      ${me.canPlan && html`<${DuplicateButton} st=${st} />`}
+    <//>
 
     <div class="tiles">
       <div class="tile hero"><div class="k">Total budget (incl. fee)</div><div class="v">THB ${fmtInt(coalesce(b.total_budget, 0))}</div>

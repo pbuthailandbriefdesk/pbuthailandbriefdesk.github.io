@@ -725,3 +725,25 @@ a.tile:hover { border-color: var(--wpp-navy); }
   .table.briefs .c-id { grid-column: 1; }
   .table.briefs .c-status { grid-column: 2; }
 }
+
+/* ---------------------------------------------------------------- Fill with AI */
+.ai-bar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; padding: 10px 14px;
+  border: 1px dashed var(--wpp-navy); background: var(--surface-2); font-size: 13px;
+}
+.ai-bar > span { flex: 1; min-width: 200px; display: inline-flex; align-items: center; gap: 8px; }
+.ai-bar svg { width: 16px; height: 16px; }
+.ai-card { margin-bottom: 18px; border-color: var(--wpp-navy); }
+.ai-card .card-head { background: var(--wpp-navy); color: var(--white); }
+.ai-card .card-head .btn-ghost { color: var(--white); }
+.ai-step { display: flex; align-items: center; gap: 10px; font-weight: 700; margin-bottom: 8px; font-size: 14px; }
+.ai-step b {
+  display: grid; place-items: center; width: 24px; height: 24px; flex: none;
+  background: var(--lime); color: var(--wpp-navy); border-radius: var(--radius-full); font-size: 12px;
+}
+.ai-preview { border-top: 1px solid var(--rule); padding-top: 16px; }
+.ai-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px 18px; margin: 0; }
+.ai-fields > div { border-left: 3px solid var(--lime); padding: 2px 0 2px 10px; min-width: 0; }
+.ai-fields > div.over { border-left-color: var(--warning, #f5a623); }
+.ai-fields dt { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--ink-muted); font-weight: 700; }
+.ai-fields dd { margin: 2px 0 0; font-size: 14px; overflow-wrap: anywhere; }

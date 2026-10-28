@@ -10,6 +10,7 @@ import {
   ChecksList, CheckSummary, ConfirmButton, DateInput, ErrorBox, Field, html, Icon, Loading, NumberInput,
   PageHead, Select, StatusPill, TextInput,
 } from '../ui/ui.js';
+import { AiAssist } from '../ui/aiassist.js';
 import { briefCrumbs, useDerived } from './common.js';
 
 const YT_FORMATS = OPT.ytFormats;
@@ -43,6 +44,8 @@ export function BriefEditor({ route }) {
         ? html`This brief is <strong>${b.status}</strong>, so it can't be edited here. ${['Locked', 'In set-up', 'In QA', 'Set up'].includes(b.status) ? 'Use Request a change on the History & set-up page.' : 'Pull it back from the Review page to edit it.'}`
         : 'Only the planner who owns this brief (or an Admin) can edit it.'}
       <a href=${briefPath(b.brief_id)}> Go to the brief summary</a></div>`}
+
+    ${editable && html`<${AiAssist} st=${st} store=${store} />`}
 
     <div class="tabs" role="tablist">
       <button role="tab" class=${tab === 'Campaign' ? 'on' : ''} onClick=${() => setTab('Campaign')}>Campaign</button>

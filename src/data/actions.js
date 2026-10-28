@@ -1,6 +1,6 @@
 // Workflow actions. Each one makes the same record changes, history event and
 // notification as the matching button in the Power App (reference/powerapp-src).
-import { isBlank, newBriefId, nowIso } from '../lib/util.js';
+import { addDays, diffDays, isBlank, newBriefId, nowIso } from '../lib/util.js';
 import { app, db, notify, teamEmails, toast } from './store.js';
 
 const me = () => app.get().me;
@@ -29,6 +29,77 @@ export async function createBrief() {
   });
   await db().insert('brief_events', { brief_id: b.brief_id, event: 'Created', by_email: m.email, at: nowIso(), detail: '' });
   return b;
+}
+
+// Duplicate brief (new, not in the Power App): copy the campaign set-up and the whole
+// IO → line → ad group → ad structure into a new Draft owned by the current user.
+// Workflow, PO, DV360 IDs and Ad Ops actions are not copied. With a new launch date every
+// date moves by the same number of days; without one the dates are left blank.
+const BRIEF_SKIP = new Set([
+  'id', 'brief_id', 'brief_version', 'status', 'planner_email', 'planner_name', 'created_at', 'modified_at', 'sp_legacy',
+  'po_number', 'po_amount', 'po_link', 'lead_time_wd', 'is_exception', 'exception_approver', 'campaign_taxonomy', 'dv360_campaign_id',
+  'ad_ops_email', 'buyer_email', 'buyer_name', 'gatekeeper_email', 'gate_result', 'gate_gaps', 'gate_attempts', 'passed_first_time',
+  'revisions_major', 'revisions_minor', 'taxonomy_fixes', 'post_launch_naming_fixes', 'resubmits', 'submitted_at', 'sent_to_ao_at',
+  'taxonomy_done_at', 'gate_replied_at', 'locked_at', 'buyer_accepted_at', 'setup_done_at',
+  'qa_result', 'qa_requested_at', 'qa_done_at', 'qa_email', 'qa_attempts', 'qa_passed_first_time',
+]);
+const CHILD_SKIP = new Set(['id', 'brief_id', 'created_at', 'modified_at', 'sp_legacy', 'dv360_id', 'action']);
+const DATE_FIELDS = ['launch_date', 'end_date', 'effective_date', 'start_date', 'segment_start', 'segment_end'];
+
+export async function duplicateBrief(src, newLaunch) {
+  const m = me();
+  const shift = !isBlank(newLaunch) && !isBlank(src.b.launch_date) ? diffDays(src.b.launch_date, newLaunch) : null;
+  const moveDates = (row) => {
+    const out = { ...row };
+    for (const f of DATE_FIELDS) {
+      if (!(f in out) || isBlank(out[f])) continue;
+      out[f] = shift === null ? null : addDays(out[f], shift);
+    }
+    return out;
+  };
+  const copy = (row, skip) => moveDates(Object.fromEntries(Object.entries(row).filter(([k]) => !skip.has(k))));
+
+  const b = await db().insert('briefs', {
+    ...copy(src.b, BRIEF_SKIP),
+    ...(shift === null && !isBlank(newLaunch) ? { launch_date: newLaunch } : {}),
+    brief_id: newBriefId(),
+    brief_version: 1,
+    status: 'Draft',
+    planner_email: m.email,
+    planner_name: m.name,
+    is_exception: 'No',
+    gate_attempts: 0, revisions_major: 0, revisions_minor: 0, taxonomy_fixes: 0, post_launch_naming_fixes: 0,
+  });
+  for (const [table, rows] of [['brief_ios', src.I], ['brief_lines', src.L], ['brief_ad_groups', src.G], ['brief_ads', src.A]]) {
+    for (const r of rows) await db().insert(table, { ...copy(r, CHILD_SKIP), brief_id: b.brief_id });
+  }
+  await db().insert('brief_events', {
+    brief_id: b.brief_id, event: 'Created', by_email: m.email, at: nowIso(),
+    detail: `Duplicated from ${src.b.brief_id}${shift === null ? ' (dates left blank)' : `, dates moved ${shift >= 0 ? '+' : ''}${shift} days`}`,
+  });
+  return b;
+}
+
+// AI fill (new): write the normalised plan from lib/aibrief.js into the open brief.
+// mode 'replace' removes the current structure first; 'add' appends the new IOs after it.
+export async function applyAiPlan(store, plan, mode) {
+  const { I } = store.get();
+  if (Object.keys(plan.brief).length) await store.patchBrief(plan.brief);
+  let offset = 0;
+  if (mode === 'replace') {
+    await store.removeWhere('brief_ads', () => true);
+    await store.removeWhere('brief_ad_groups', () => true);
+    await store.removeWhere('brief_lines', () => true);
+    await store.removeWhere('brief_ios', () => true);
+  } else {
+    offset = Math.max(0, ...I.map((x) => Number(x.io_no) || 0));
+  }
+  const shift = (r) => ({ ...r, io_no: r.io_no + offset });
+  for (const r of plan.ios) await store.addRow('brief_ios', shift(r));
+  for (const r of plan.lines) await store.addRow('brief_lines', shift(r));
+  for (const r of plan.groups) await store.addRow('brief_ad_groups', shift(r));
+  for (const r of plan.ads) await store.addRow('brief_ads', shift(r));
+  await store.event('Filled with AI', `${Object.keys(plan.brief).length} campaign fields · ${plan.ios.length} IO · ${plan.lines.length} line items · ${plan.groups.length} ad groups · ${plan.ads.length} ads${mode === 'replace' ? ' (structure replaced)' : ''}`);
 }
 
 // scrDetail.dtCancel / scrBrief.brDelete: delete a never-submitted draft, otherwise cancel.
